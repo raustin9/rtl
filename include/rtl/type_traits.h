@@ -64,8 +64,14 @@ namespace rtl
     template <typename T>
     constexpr bool is_nothrow_move_assignable_v = std::is_nothrow_move_assignable<T>::value;
 
+    template <typename T>
+    constexpr bool is_move_constructible_v = std::is_move_constructible<T>::value;
+
     template <typename T, typename ... Args>
     constexpr bool is_trivially_constructible_v = std::is_trivially_constructible<T, Args...>::value;
+
+    template <typename T>
+    constexpr bool is_trivially_move_constructible_v = std::is_trivially_move_constructible<T>::value;
 
     template <typename T, typename Arg>
     constexpr bool is_trivially_assignable_v = std::is_trivially_assignable<T, Arg>::value;
@@ -81,6 +87,21 @@ namespace rtl
 
     template <typename T>
     constexpr bool is_function_v = std::is_function<T>::value;
+
+    template <typename T>
+    constexpr bool is_default_constructible_v = std::is_default_constructible<T>::value;
+
+    template <typename T>
+    constexpr bool is_nothrow_default_constructible_v = std::is_nothrow_default_constructible<T>::value;
+
+    template <typename T>
+    constexpr bool is_copy_constructible_v = std::is_copy_constructible<T>::value;
+
+    template <typename T>
+    constexpr bool is_trivially_copy_constructible_v = std::is_trivially_copy_constructible<T>::value;
+
+    template <typename T>
+    constexpr bool is_nothrow_copy_constructible_v = std::is_nothrow_copy_constructible<T>::value;
 } // namespace rtl
 
 #endif // __RTL_TYPE_TRAITS_H

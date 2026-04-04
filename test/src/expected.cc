@@ -72,3 +72,8 @@ TEST_CASE( "rtl::unexpected in_place with initializer list + extra args", "[expe
 
     REQUIRE(unexpect.error() == expected_result);
 }
+
+TEST_CASE( "rtl::expected ", "[expected]" )
+{
+    rtl::expected<int, char> test;
+}

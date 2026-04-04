@@ -215,60 +215,152 @@ namespace rtl
         template <typename T, typename E>
         constexpr bool __can_reassign_type
             = rtl::is_nothrow_move_constructible_v<T> || rtl::is_nothrow_move_assignable_v<E>;
+
+        /// Template specializations for policy-based construction behavior:
+
+        // Storage layer
+        template <typename T, typename E>
+        struct __expected_storage_base
+        {
+            union
+            {
+                std::remove_cv_t<T> m_value;
+                E                   m_error;
+            };
+            bool m_has_value;
+        };
+
+        template <typename T, typename E, bool = rtl::is_default_constructible_v<T>>
+        struct __expected_default_base : __expected_storage_base<T, E>
+        {
+            __expected_default_base() noexcept(rtl::is_nothrow_default_constructible_v<T>)
+            {
+                this->m_has_value = true;
+                rtl::construct_at(std::addressof(this->m_value));
+            }
+        };
+
+        template <typename T, typename E>
+        struct __expected_default_base<T, E, false> : __expected_storage_base<T, E>
+        {
+            __expected_default_base() = delete;
+        };
+
+        // Copy layer: default
+        template <
+            typename T,
+            typename E,
+            bool = rtl::is_trivially_copy_constructible_v<T>
+                && rtl::is_trivially_copy_constructible_v<E>
+        >
+        struct __expected_copy_base : __expected_default_base<T, E>
+        {
+            __expected_copy_base() noexcept = default;
+            __expected_copy_base(const __expected_copy_base&) = default;
+        };
+
+        // Copy layer: non-trivial
+        template <typename T, typename E>
+        struct __expected_copy_base<T, E, false> : __expected_default_base<T, E>
+        {
+            __expected_copy_base() = default;
+            __expected_copy_base(__expected_copy_base&&) = default;
+            __expected_copy_base(const __expected_copy_base& other)
+                noexcept(
+                    rtl::is_nothrow_copy_constructible_v<T>
+                    && rtl::is_nothrow_copy_constructible_v<E>)
+            {
+                this->m_has_value = other.m_has_value;
+                if (this->m_has_value)
+                    rtl::construct_at(std::addressof(this->m_value), other.m_value);
+                else
+                    rtl::construct_at(std::addressof(this->m_error), other.m_error);
+            }
+        };
+
+        // Move layer: default
+        template <
+            typename T,
+            typename E,
+            bool = rtl::is_trivially_move_constructible_v<T>
+                && rtl::is_trivially_move_constructible_v<E>
+        >
+        struct __expected_move_base : __expected_copy_base<T, E>
+        {
+            __expected_move_base() = default;
+            __expected_move_base(const __expected_move_base&) = default;
+            __expected_move_base(__expected_move_base&&) = default;
+        };
+
+        // Move layer: non-trivial
+        template <typename T, typename E>
+        struct __expected_move_base<T, E, false> : __expected_copy_base<T, E>
+        {
+            __expected_move_base() = default;
+            __expected_move_base(const __expected_move_base&) = default;
+
+            __expected_move_base(__expected_move_base&& other)
+                noexcept(rtl::is_nothrow_move_constructible_v<T> && rtl::is_nothrow_move_constructible_v<E>)
+            {
+                this->m_has_value = other.m_has_value;
+                if (this->m_has_value)
+                    rtl::construct_at(std::addressof(this->m_value), std::move(other.m_value));
+                else
+                    rtl::construct_at(std::addressof(this->m_error), std::move(other.m_error));
+            }
+        };
+
+        // Copy delete layer
+        template<
+            typename T,
+            typename E,
+            bool = rtl::is_copy_constructible_v<T>
+                && rtl::is_copy_constructible_v<E>
+        >
+        struct __expected_copy_delete_base : __expected_move_base<T, E>
+        {
+            __expected_copy_delete_base() = default;
+            __expected_copy_delete_base(__expected_copy_delete_base&&) = default;
+            __expected_copy_delete_base(const __expected_copy_delete_base&) = delete;
+        };
+
+        // Copy delete layer: allow copyable
+        template <typename T, typename E>
+        struct __expected_copy_delete_base<T, E, true> : __expected_move_base<T, E>
+        {
+            __expected_copy_delete_base() = default;
+            __expected_copy_delete_base(const __expected_copy_delete_base&) = default;
+        };
+
+        // Move delete layer: not-movable
+        template<
+            typename T,
+            typename E,
+            bool = rtl::is_move_constructible_v<T>
+                && rtl::is_move_constructible_v<E>
+        >
+        struct __expected_move_delete_base : __expected_copy_delete_base<T, E>
+        {
+            __expected_move_delete_base() = default;
+            __expected_move_delete_base(const __expected_move_delete_base&) = default;
+            __expected_move_delete_base(__expected_move_delete_base&&) = delete;
+        };
+
+        // Move delete layer: is-movable
+        template <typename T, typename E>
+        struct __expected_move_delete_base<T, E, true> : __expected_copy_delete_base<T, E>
+        {
+            __expected_move_delete_base() = default;
+            __expected_move_delete_base(const __expected_move_delete_base&) = default;
+            __expected_move_delete_base(__expected_move_delete_base&&) = default;
+        };
     } // namespace __expected_detail
 
     template <typename T, typename E>
-    class expected
+    class expected : __expected_detail::__expected_move_delete_base<T, E>
     {
-        static_assert( ! rtl::is_reference_v<T>, "" );
-        static_assert( ! rtl::is_function_v<T>, "" );
-        static_assert( ! rtl::is_same_v<std::remove_cv_t<T>, rtl::in_place_t>, "" );
-        static_assert( ! rtl::is_same_v<std::remove_cv_t<T>, unexpect_t>, "" );
-        static_assert( ! __expected_detail::__is_unexpected<std::remove_cv_t<T>>, "" );
-        static_assert( __expected_detail::__can_be_unexpected<E>, "" );
-
-        // If T is not cv bool, converts from any cvref<T, expected<U, G>> and
-        // is_constructible<unexpected<E>, cv expected<U, G> ref-qual> are false
-        template <typename U,
-                  typename G,
-                  typename Unex = unexpected<E>,
-                  typename = std::remove_cv_t<T>>
-        static constexpr bool __cons_from_expected
-            = std::is_constructible<T, expected<U, G>&>::value
-            || std::is_constructible<T, expected<U, G>>::value
-            || std::is_constructible<T, const expected<U, G>&>::value
-            || std::is_constructible<T, const expected<U, G>>::value
-            || std::is_constructible<expected<U, G>&, T>::value
-            || std::is_constructible<expected<U, G>, T>::value
-            || std::is_constructible<const expected<U, G>&, T>::value
-            || std::is_constructible<const expected<U, G>, T>::value
-            || std::is_constructible<Unex, expected<U, G>&>::value
-            || std::is_constructible<Unex, expected<U, G>>::value
-            || std::is_constructible<Unex, const expected<U, G>&>::value
-            || std::is_constructible<Unex, const expected<U, G>>::value
-        ;
-
-        template <typename U, typename G, typename Unex>
-        static constexpr bool __cons_from_expected<U, G, Unex, bool>
-            = std::is_constructible<Unex, expected<U, G>&>::value
-            || std::is_constructible<Unex, expected<U, G>>::value
-            || std::is_constructible<Unex, const expected<U, G>&>::value
-            || std::is_constructible<Unex, const expected<U, G>>::value
-        ;
-
-        template <typename U, typename G>
-        static constexpr bool __explicit_conv = std::is_convertible<U, T>::value || std::is_convertible<G, T>::value;
-
-
     public:
-
     private:
-        union
-        {
-            std::remove_cv_t<T> m_value;
-            E                   m_error;
-        };
-        bool m_has_value;
     };
 } // namespace rtl
 
