@@ -3,6 +3,7 @@
 
 namespace rtl
 {
+
 } // namespace rtl
 
 #endif // __RTL_TYPE_TRAITS_H

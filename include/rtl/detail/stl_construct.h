@@ -1,8 +1,10 @@
 #ifndef __RTL_DETAIL_STL_CONSTRUCT_H
 #define __RTL_DETAIL_STL_CONSTRUCT_H
 
+#include <memory>
+
 #include <type_traits>
-namespace rtl::__detail
+namespace rtl::__memory_detail
 {
     /* ------------------- begin: construct_at ------------------- */
 
@@ -32,6 +34,24 @@ namespace rtl::__detail
     }
 
     /* ------------------- end:   construct_at ------------------- */
-} // namespace rtl::__detail
+
+    /* ------------------- begin: destroy_at ------------------- */
+    template <typename T, std::enable_if_t<!std::is_array_v<T>, int> = 0>
+    auto destroy_at(T* location) -> void
+    {
+        location->~T();
+    }
+
+    template <typename T, std::enable_if_t<std::is_array_v<T>, int> = 0>
+    auto destroy_at(T* location) -> void
+    {
+        for (auto& t : *location)
+        {
+            destroy_at(std::addressof(t));
+        }
+    }
+    /* ------------------- end:   destroy_at ------------------- */
+
+} // namespace rtl::__memory_detail
 
 #endif // __RTL_DETAIL_STL_CONSTRUCT_H

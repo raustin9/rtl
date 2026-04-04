@@ -15,7 +15,7 @@ public:
     static int test_const_get(const ConstTracker& tracker) { return rtl::as_const(tracker).get(); }
 };
 
-TEST_CASE( "Correct method called", "[as_const]") {
+TEST_CASE( "Const method called using rtl::as_const", "[as_const]") {
     ConstTracker tracker {};
 
     REQUIRE( ConstTracker::test_get(tracker) == ConstTracker::NonConstValue );

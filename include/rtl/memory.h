@@ -9,9 +9,9 @@ namespace rtl
     /* ------------------- begin: construct_at ------------------- */
     // Alias for __detail::construct_at
     template <typename ... Args>
-    auto construct_at(Args&& ... args) -> decltype(__detail::construct_at(std::forward<Args>(args)...))
+    auto construct_at(Args&& ... args) -> decltype(__memory_detail::construct_at(std::forward<Args>(args)...))
     {
-        return __detail::construct_at(std::forward<Args>(args)...);
+        return __memory_detail::construct_at(std::forward<Args>(args)...);
     }
     /* ------------------- end:   construct_at ------------------- */
 } // namespace rtl

@@ -10,6 +10,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE INTERNAL "")
 
 set(RTL_TEST_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/src/as_const.cc"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/construct_at.cc"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/expected.cc"
 )
 
 # Catch 2 For Testing
