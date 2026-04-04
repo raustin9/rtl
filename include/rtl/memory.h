@@ -14,6 +14,15 @@ namespace rtl
         return __memory_detail::construct_at(std::forward<Args>(args)...);
     }
     /* ------------------- end:   construct_at ------------------- */
+
+    /* ------------------- begin: destroy_at ------------------- */
+    // Alias for __detail::destroy_at
+    template <typename ... Args>
+    auto destroy_at(Args&& ... args) -> decltype(__memory_detail::destroy_at(std::forward<Args>(args)...))
+    {
+        return __memory_detail::destroy_at(std::forward<Args>(args)...);
+    }
+    /* ------------------- end:   destroy_at ------------------- */
 } // namespace rtl
 
 #endif // __RTL_MEMORY_H

@@ -4,6 +4,11 @@
 #include <exception>
 #include <utility>
 
+#include "memory.h"
+#include "detail/stl_construct.h"
+#include "type_traits.h"
+#include "utility.h"
+
 namespace rtl
 {
     template <typename T, typename E>
@@ -70,7 +75,7 @@ namespace rtl
     };
 
     // Tag for constructing unexpected values
-    inline constexpr unexpect_t unexpect{};
+    constexpr unexpect_t unexpect{};
 
     namespace __expected_detail
     {
@@ -84,11 +89,11 @@ namespace rtl
 
         template <typename E>
         constexpr bool __can_be_unexpected =
-            std::is_object_v<E>
-            && (!std::is_array_v<E>)
+            rtl::is_object_v<E>
+            && (!rtl::is_array_v<E>)
             && (!__is_unexpected<E>)
-            && (!std::is_const_v<E>)
-            && (!std::is_volatile_v<E>)
+            && (!rtl::is_const_v<E>)
+            && (!rtl::is_volatile_v<E>)
         ;
 
         struct __in_place_inv {};
@@ -98,7 +103,7 @@ namespace rtl
     template <typename E>
     class unexpected
     {
-        static_assert(__expected_detail::__can_be_unexpected<E>);
+        static_assert(__expected_detail::__can_be_unexpected<E>, "");
 
     public:
         unexpected(const unexpected&) = default;
@@ -107,23 +112,23 @@ namespace rtl
         template <
             typename Err = E,
             typename = std::enable_if_t<
-                !std::is_same_v<std::remove_cvref_t<E>, unexpected>
-                && !std::is_same_v<std::remove_cvref_t<E>, std::in_place_t>
-                && std::is_constructible_v<E, Err>
+                !rtl::is_same_v<rtl::remove_cvref_t<E>, unexpected>
+                && !rtl::is_same_v<rtl::remove_cvref_t<E>, rtl::in_place_t>
+                && rtl::is_constructible_v<E, Err>
             >
         >
-        explicit unexpected(Err&& e) noexcept(std::is_nothrow_constructible_v<E, Err>)
+        explicit unexpected(Err&& e) noexcept(rtl::is_nothrow_constructible_v<E, Err>)
             : m_error( std::forward<Err>(e) )
         {}
 
         template <
             typename ... Args,
             typename = std::enable_if_t<
-                std::is_constructible_v<E, Args...>
+                rtl::is_constructible_v<E, Args...>
             >
         >
-        explicit unexpected(std::in_place_t, Args&& ... args)
-        noexcept(std::is_nothrow_constructible_v<E, Args...>)
+        explicit unexpected(rtl::in_place_t, Args&& ... args)
+        noexcept(rtl::is_nothrow_constructible_v<E, Args...>)
             : m_error( std::forward<Args>(args)... )
         {}
 
@@ -131,11 +136,11 @@ namespace rtl
             typename U,
             typename ... Args,
             typename = std::enable_if_t<
-                std::is_constructible_v<E, std::initializer_list<U>&, Args...>
+                rtl::is_constructible_v<E, std::initializer_list<U>&, Args...>
             >
         >
-        explicit unexpected(std::in_place_t, std::initializer_list<U> il, Args&& ... args)
-        noexcept(std::is_nothrow_constructible_v<E, std::initializer_list<U>&, Args...>)
+        explicit unexpected(rtl::in_place_t, std::initializer_list<U> il, Args&& ... args)
+        noexcept(rtl::is_nothrow_constructible_v<E, std::initializer_list<U>&, Args...>)
             : m_error( il, std::forward<Args>(args)... )
         {}
 
@@ -159,7 +164,112 @@ namespace rtl
         E m_error;
     };
 
-    template <typename E> unexpected(E) -> unexpected<E>;
+    // template <typename E> unexpected(E) -> unexpected<E>;
+
+    namespace __expected_detail
+    {
+        template <typename T, typename U, typename V>
+        auto __reinit(T* new_val, U* old_val, V&& arg) noexcept
+            -> std::enable_if_t<rtl::is_nothrow_constructible_v<T, V>>
+        {
+            rtl::destroy_at(old_val);
+            rtl:construct_at(new_val, std::forward<V>(arg));
+        }
+
+        template <typename T, typename U, typename V>
+        auto __reinit(T* new_val, U* old_val, V&& arg) noexcept(false)
+            -> std::enable_if_t<!rtl::is_nothrow_constructible_v<T, V> && rtl::is_nothrow_move_constructible_v<T>>
+        {
+            T tmp(std::forward<V>(arg));
+            rtl::destroy_at(old_val);
+            rtl:construct_at(new_val, std::move(tmp));
+        }
+
+        template <typename T, typename U, typename V>
+        auto __reinit(T* new_val, U* old_val, V&& arg) noexcept(false)
+            -> std::enable_if_t<!rtl::is_nothrow_constructible_v<T, V> && !rtl::is_nothrow_move_constructible_v<T>>
+        {
+            // TODO: use guard class?
+        }
+
+        // If T is cv bool, remove_cvref<U> is not a specialization of expected
+        template <typename T, typename U>
+        constexpr bool __not_constructing_bool_from_expected
+            = !rtl::is_same_v<rtl::remove_cvref_t<T>, bool>
+            || !__is_expected<rtl::remove_cvref_t<U>>;
+
+        template <typename T, typename U = rtl::remove_cvref_t<T>>
+        constexpr bool __trivially_replaceable
+            = rtl::is_trivially_constructible_v<U, T>
+            && rtl::is_trivially_assignable_v<U&, T>
+            && rtl::is_trivially_destructible_v<U>;
+
+        template <typename T, typename U = rtl::remove_cvref_t<T>>
+        constexpr bool __usable_for_assign
+            = rtl::is_constructible_v<U, T> && rtl::is_assignable_v<U&, T>;
+
+        template <typename T, typename U = rtl::remove_cvref_t<T>>
+        constexpr bool __usable_for_trivial_assign
+            = __trivially_replaceable<T, U> && __usable_for_assign<T, U>;
+
+        template <typename T, typename E>
+        constexpr bool __can_reassign_type
+            = rtl::is_nothrow_move_constructible_v<T> || rtl::is_nothrow_move_assignable_v<E>;
+    } // namespace __expected_detail
+
+    template <typename T, typename E>
+    class expected
+    {
+        static_assert( ! rtl::is_reference_v<T>, "" );
+        static_assert( ! rtl::is_function_v<T>, "" );
+        static_assert( ! rtl::is_same_v<std::remove_cv_t<T>, rtl::in_place_t>, "" );
+        static_assert( ! rtl::is_same_v<std::remove_cv_t<T>, unexpect_t>, "" );
+        static_assert( ! __expected_detail::__is_unexpected<std::remove_cv_t<T>>, "" );
+        static_assert( __expected_detail::__can_be_unexpected<E>, "" );
+
+        // If T is not cv bool, converts from any cvref<T, expected<U, G>> and
+        // is_constructible<unexpected<E>, cv expected<U, G> ref-qual> are false
+        template <typename U,
+                  typename G,
+                  typename Unex = unexpected<E>,
+                  typename = std::remove_cv_t<T>>
+        static constexpr bool __cons_from_expected
+            = std::is_constructible<T, expected<U, G>&>::value
+            || std::is_constructible<T, expected<U, G>>::value
+            || std::is_constructible<T, const expected<U, G>&>::value
+            || std::is_constructible<T, const expected<U, G>>::value
+            || std::is_constructible<expected<U, G>&, T>::value
+            || std::is_constructible<expected<U, G>, T>::value
+            || std::is_constructible<const expected<U, G>&, T>::value
+            || std::is_constructible<const expected<U, G>, T>::value
+            || std::is_constructible<Unex, expected<U, G>&>::value
+            || std::is_constructible<Unex, expected<U, G>>::value
+            || std::is_constructible<Unex, const expected<U, G>&>::value
+            || std::is_constructible<Unex, const expected<U, G>>::value
+        ;
+
+        template <typename U, typename G, typename Unex>
+        static constexpr bool __cons_from_expected<U, G, Unex, bool>
+            = std::is_constructible<Unex, expected<U, G>&>::value
+            || std::is_constructible<Unex, expected<U, G>>::value
+            || std::is_constructible<Unex, const expected<U, G>&>::value
+            || std::is_constructible<Unex, const expected<U, G>>::value
+        ;
+
+        template <typename U, typename G>
+        static constexpr bool __explicit_conv = std::is_convertible<U, T>::value || std::is_convertible<G, T>::value;
+
+
+    public:
+
+    private:
+        union
+        {
+            std::remove_cv_t<T> m_value;
+            E                   m_error;
+        };
+        bool m_has_value;
+    };
 } // namespace rtl
 
 #endif // __RTL_EXPECTED_H
