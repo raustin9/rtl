@@ -222,6 +222,8 @@ namespace rtl
         template <typename T, typename E>
         struct __expected_storage_base
         {
+            __expected_storage_base() noexcept {}
+            ~__expected_storage_base() noexcept {}
             union
             {
                 std::remove_cv_t<T> m_value;
@@ -230,9 +232,40 @@ namespace rtl
             bool m_has_value;
         };
 
-        template <typename T, typename E, bool = rtl::is_default_constructible_v<T>>
-        struct __expected_default_base : __expected_storage_base<T, E>
+        // Destructor Layer
+        template <
+            typename T,
+            typename E,
+            bool = rtl::is_trivially_destructible_v<T>
+                && rtl::is_trivially_destructible_v<E>
+        >
+        struct __expected_destructible_base : __expected_storage_base<T, E>
         {
+            ~__expected_destructible_base() = default;
+        };
+
+        template <typename T, typename E>
+        struct __expected_destructible_base<T, E, false> : __expected_storage_base<T, E>
+        {
+            ~__expected_destructible_base()
+            {
+                if (this->m_has_value)
+                    rtl::destroy_at(std::addressof(this->m_value));
+                else
+                    rtl::destroy_at(std::addressof(this->m_error));
+            }
+        };
+
+        // Default constructor layer
+        template <
+            typename T,
+            typename E,
+            bool = rtl::is_default_constructible_v<T>
+                && rtl::is_default_constructible_v<E>
+        >
+        struct __expected_default_base : __expected_destructible_base<T, E>
+        {
+            ~__expected_default_base() = default;
             __expected_default_base() noexcept(rtl::is_nothrow_default_constructible_v<T>)
             {
                 this->m_has_value = true;
@@ -241,9 +274,10 @@ namespace rtl
         };
 
         template <typename T, typename E>
-        struct __expected_default_base<T, E, false> : __expected_storage_base<T, E>
+        struct __expected_default_base<T, E, false> : __expected_destructible_base<T, E>
         {
             __expected_default_base() = delete;
+            ~__expected_default_base() = default;
         };
 
         // Copy layer: default
@@ -253,18 +287,21 @@ namespace rtl
             bool = rtl::is_trivially_copy_constructible_v<T>
                 && rtl::is_trivially_copy_constructible_v<E>
         >
-        struct __expected_copy_base : __expected_default_base<T, E>
+        struct __expected_copy_base : __expected_destructible_base<T, E>
         {
-            __expected_copy_base() noexcept = default;
+            __expected_copy_base() = default;
             __expected_copy_base(const __expected_copy_base&) = default;
+            ~__expected_copy_base() = default;
         };
 
         // Copy layer: non-trivial
         template <typename T, typename E>
-        struct __expected_copy_base<T, E, false> : __expected_default_base<T, E>
+        struct __expected_copy_base<T, E, false> : __expected_destructible_base<T, E>
         {
             __expected_copy_base() = default;
             __expected_copy_base(__expected_copy_base&&) = default;
+            ~__expected_copy_base() = default;
+
             __expected_copy_base(const __expected_copy_base& other)
                 noexcept(
                     rtl::is_nothrow_copy_constructible_v<T>
@@ -290,6 +327,7 @@ namespace rtl
             __expected_move_base() = default;
             __expected_move_base(const __expected_move_base&) = default;
             __expected_move_base(__expected_move_base&&) = default;
+            ~__expected_move_base() = default;
         };
 
         // Move layer: non-trivial
@@ -298,6 +336,7 @@ namespace rtl
         {
             __expected_move_base() = default;
             __expected_move_base(const __expected_move_base&) = default;
+            ~__expected_move_base() = default;
 
             __expected_move_base(__expected_move_base&& other)
                 noexcept(rtl::is_nothrow_move_constructible_v<T> && rtl::is_nothrow_move_constructible_v<E>)
@@ -322,6 +361,7 @@ namespace rtl
             __expected_copy_delete_base() = default;
             __expected_copy_delete_base(__expected_copy_delete_base&&) = default;
             __expected_copy_delete_base(const __expected_copy_delete_base&) = delete;
+            ~__expected_copy_delete_base() = default;
         };
 
         // Copy delete layer: allow copyable
@@ -330,6 +370,7 @@ namespace rtl
         {
             __expected_copy_delete_base() = default;
             __expected_copy_delete_base(const __expected_copy_delete_base&) = default;
+            ~__expected_copy_delete_base() = default;
         };
 
         // Move delete layer: not-movable
@@ -344,6 +385,7 @@ namespace rtl
             __expected_move_delete_base() = default;
             __expected_move_delete_base(const __expected_move_delete_base&) = default;
             __expected_move_delete_base(__expected_move_delete_base&&) = delete;
+            ~__expected_move_delete_base() = default;
         };
 
         // Move delete layer: is-movable
@@ -353,13 +395,96 @@ namespace rtl
             __expected_move_delete_base() = default;
             __expected_move_delete_base(const __expected_move_delete_base&) = default;
             __expected_move_delete_base(__expected_move_delete_base&&) = default;
+            ~__expected_move_delete_base() = default;
         };
     } // namespace __expected_detail
 
     template <typename T, typename E>
     class expected : __expected_detail::__expected_move_delete_base<T, E>
     {
+    // Restore inherited constructors
     public:
+        expected() = default;
+        expected(const expected&) = default;
+        expected(expected&&) = default;
+        ~expected() = default;
+
+    // Conversion constructors
+    public:
+        // Convert from value
+        template <typename U = std::remove_cv_t<T>,
+            typename = std::enable_if_t<
+                !rtl::is_same_v<U, expected>
+                && !rtl::is_same_v<U, rtl::in_place_t>
+                && rtl::is_constructible_v<T, U>
+            >
+        >
+        expected(U&& value)
+        noexcept(rtl::is_nothrow_constructible_v<T, U>)
+        {
+            construct_at(std::addressof(this->m_value), std::forward<U>(value));
+            // this->m_value = std::forward<U>(value);
+            this->m_has_value = true;
+        }
+
+        // Convert from unexpected
+        template <typename G = E,
+            typename = std::enable_if_t<
+                rtl::is_constructible_v<E, const G&>
+                && !rtl::is_same_v<G, expected>
+                && !rtl::is_same_v<G, rtl::in_place_t>
+            >
+        >
+        expected(const unexpected<G>& unex)
+        noexcept(rtl::is_nothrow_constructible_v<E, G>)
+        {
+            rtl::construct_at(std::addressof(this->m_error), std::move(unex.error()));
+            this->m_has_value = false;
+        }
+
+        // Construct with in_place_t
+        template <typename ... Args, typename =
+            std::enable_if_t<is_constructible_v<T, Args...>>
+        >
+        expected(in_place_t, Args&&... args)
+        noexcept(is_nothrow_constructible_v<T, Args...>)
+        {
+            construct_at(std::addressof(this->m_value), std::forward<Args>(args)...);
+            this->m_has_value = true;
+        }
+
+        // Construct in_place with initializer list
+        template <typename U, typename ... Args, typename =
+            std::enable_if_t<is_constructible_v<T, std::initializer_list<U>&, Args...>>
+        >
+        expected(in_place_t, std::initializer_list<U>& init_list, Args&&... args)
+        noexcept(is_nothrow_constructible_v<T, std::initializer_list<U>&, Args...>)
+        {
+            construct_at(std::addressof(this->m_value), init_list, std::forward<Args>(args)...);
+            this->m_has_value = true;
+        }
+
+        // Construct error in place with unexpect_t
+        template <typename ... Args, typename =
+            std::enable_if_t<is_constructible_v<E, Args...>>
+        >
+        expected(unexpect_t, Args&&... args)
+        noexcept(is_nothrow_constructible_v<E, Args...>)
+        {
+            construct_at(std::addressof(this->m_error), std::forward<Args>(args)...);
+            this->m_has_value = false;
+        }
+
+        // Construct unexpected value in place with initializer list
+        template <typename U, typename ... Args, typename =
+            std::enable_if_t<is_constructible_v<E, std::initializer_list<U>&, Args...>>
+        >
+        expected(unexpect_t, std::initializer_list<U>& init_list, Args&&... args)
+        noexcept(is_nothrow_constructible_v<E, std::initializer_list<U>&, Args...>)
+        {
+            construct_at(std::addressof(this->m_error), init_list, std::forward<Args>(args)...);
+            this->m_has_value = false;
+        }
     private:
     };
 } // namespace rtl

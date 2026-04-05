@@ -73,7 +73,55 @@ TEST_CASE( "rtl::unexpected in_place with initializer list + extra args", "[expe
     REQUIRE(unexpect.error() == expected_result);
 }
 
-TEST_CASE( "rtl::expected ", "[expected]" )
+TEST_CASE( "rtl::expected default construction int", "[expected]" )
 {
     rtl::expected<int, char> test;
+}
+
+TEST_CASE( "rtl::expected default construction with custom object", "[expected]" )
+{
+    class MyObject
+    {
+    public:
+        MyObject() = default;
+    };
+
+    rtl::expected<MyObject, char> test;
+}
+TEST_CASE( "rtl::expected conversion construction from rvalue", "[expected]" )
+{
+    class MyObject
+    {
+    public:
+        MyObject() = default;
+    };
+
+    rtl::expected<MyObject, char> test = MyObject();
+}
+
+TEST_CASE( "rtl::expected construct from rtl::unexpected", "[expected]" )
+{
+    rtl::unexpected<int> unexpect { 1 };
+    rtl::expected<char, int> test = unexpect;
+
+    REQUIRE(unexpect.error() == 1);
+}
+
+TEST_CASE( "rtl::expected construct from object-based rtl::unexpected", "[expected]" )
+{
+    std::vector<int> expected_result = { 1, 2, 3, 4, 5 };
+    rtl::unexpected<std::vector<int>> unexpect { rtl::in_place, { 1, 2, 3, 4, 5 }};
+
+    rtl::expected<int, std::vector<int>> test = unexpect;
+}
+
+TEST_CASE( "rtl::expected construct from object-based rtl::unexpected r-value", "[expected]" )
+{
+    auto return_unexpected = [] {
+        std::vector<int> expected_result = { 1, 2, 3, 4, 5 };
+        rtl::unexpected<std::vector<int>> unexpect { rtl::in_place, { 1, 2, 3, 4, 5 }};
+        return unexpect;
+    };
+
+    rtl::expected<int, std::vector<int>> test = return_unexpected();
 }
