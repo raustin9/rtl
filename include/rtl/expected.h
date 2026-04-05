@@ -230,6 +230,38 @@ namespace rtl
                 E                   m_error;
             };
             bool m_has_value;
+
+            template <typename U>
+            void _assign_value(U&& value)
+            {
+                if (this->m_has_value)
+                    construct_at(std::addressof(this->m_value), std::forward<U>(value));
+                else
+                {
+                    __reinit(
+                        std::addressof(this->m_value),
+                        std::addressof(this->m_error),
+                        std::forward<U>(value)
+                        );
+                    this->m_has_value = true;
+                }
+            }
+
+            template <typename V>
+            void _assign_error(V&& err)
+            {
+                if (this->m_has_value)
+                {
+                    __reinit(
+                        std::addressof(this->m_error),
+                        std::addressof(this->m_value),
+                        std::forward<V>(err)
+                        );
+                    this->m_has_value = false;
+                }
+                else
+                    construct_at(std::addressof(this->m_error), std::forward<V>(err));
+            }
         };
 
         // Destructor Layer
@@ -349,6 +381,73 @@ namespace rtl
             }
         };
 
+        template <typename T, typename E, bool =
+            rtl::is_trivially_copy_assignable_v<T>
+            && rtl::is_trivially_copy_assignable_v<E>
+        >
+        struct __expected_copy_assign_base : __expected_move_base<T, E>
+        {
+            __expected_copy_assign_base() = default;
+            ~__expected_copy_assign_base() = default;
+            __expected_copy_assign_base(__expected_copy_assign_base&&) = default;
+            __expected_copy_assign_base(const __expected_copy_assign_base&) = default;
+
+            __expected_copy_assign_base& operator=(const __expected_copy_assign_base&) = default;
+        };
+
+        template <typename T, typename E>
+        struct __expected_copy_assign_base<T, E, false> : __expected_move_base<T, E>
+        {
+            __expected_copy_assign_base() = default;
+            ~__expected_copy_assign_base() = default;
+            __expected_copy_assign_base(__expected_copy_assign_base&&) = default;
+            __expected_copy_assign_base(const __expected_copy_assign_base&) = default;
+
+            __expected_copy_assign_base& operator=(const __expected_copy_assign_base& other)
+            {
+                if (other.m_has_value)
+                    this->_assign_value(other.m_value);
+                else
+                    this->_assign_error(other.m_error);
+
+                return *this;
+            }
+        };
+
+        template <typename T, typename E, bool =
+            rtl::is_trivially_move_assignable_v<T>
+            && rtl::is_trivially_move_assignable_v<E>
+        >
+        struct __expected_move_assign_base : __expected_copy_assign_base<T, E>
+        {
+            __expected_move_assign_base() = default;
+            ~__expected_move_assign_base() = default;
+            __expected_move_assign_base(__expected_move_assign_base&&) = default;
+            __expected_move_assign_base(const __expected_move_assign_base&) = default;
+            __expected_move_assign_base& operator=(const __expected_move_assign_base&) = default;
+            __expected_move_assign_base& operator=(__expected_move_assign_base&&) = default;
+        };
+
+        template <typename T, typename E>
+        struct __expected_move_assign_base<T, E, false> : __expected_copy_assign_base<T, E>
+        {
+            __expected_move_assign_base() = default;
+            ~__expected_move_assign_base() = default;
+            __expected_move_assign_base(__expected_move_assign_base&&) = default;
+            __expected_move_assign_base(const __expected_move_assign_base&) = default;
+            __expected_move_assign_base& operator=(const __expected_move_assign_base&) = default;
+
+            __expected_move_assign_base& operator=(__expected_move_assign_base&& other)
+            {
+                if (other.m_has_value)
+                    this->_assign_value(std::move(other.m_value));
+                else
+                    this->_assign_value(std::move(other.m_error));
+
+                return *this;
+            }
+        };
+
         // Copy delete layer
         template<
             typename T,
@@ -356,21 +455,25 @@ namespace rtl
             bool = rtl::is_copy_constructible_v<T>
                 && rtl::is_copy_constructible_v<E>
         >
-        struct __expected_copy_delete_base : __expected_move_base<T, E>
+        struct __expected_copy_delete_base : __expected_copy_assign_base<T, E>
         {
             __expected_copy_delete_base() = default;
             __expected_copy_delete_base(__expected_copy_delete_base&&) = default;
             __expected_copy_delete_base(const __expected_copy_delete_base&) = delete;
             ~__expected_copy_delete_base() = default;
+
+            __expected_copy_delete_base& operator=(const __expected_copy_delete_base&) = default;
         };
 
         // Copy delete layer: allow copyable
         template <typename T, typename E>
-        struct __expected_copy_delete_base<T, E, true> : __expected_move_base<T, E>
+        struct __expected_copy_delete_base<T, E, true> : __expected_copy_assign_base<T, E>
         {
             __expected_copy_delete_base() = default;
             __expected_copy_delete_base(const __expected_copy_delete_base&) = default;
             ~__expected_copy_delete_base() = default;
+
+            __expected_copy_delete_base& operator=(const __expected_copy_delete_base&) = default;
         };
 
         // Move delete layer: not-movable
@@ -386,6 +489,7 @@ namespace rtl
             __expected_move_delete_base(const __expected_move_delete_base&) = default;
             __expected_move_delete_base(__expected_move_delete_base&&) = delete;
             ~__expected_move_delete_base() = default;
+            __expected_move_delete_base& operator=(const __expected_move_delete_base&) = default;
         };
 
         // Move delete layer: is-movable
@@ -396,6 +500,7 @@ namespace rtl
             __expected_move_delete_base(const __expected_move_delete_base&) = default;
             __expected_move_delete_base(__expected_move_delete_base&&) = default;
             ~__expected_move_delete_base() = default;
+            __expected_move_delete_base& operator=(const __expected_move_delete_base&) = default;
         };
     } // namespace __expected_detail
 
@@ -408,6 +513,7 @@ namespace rtl
         expected(const expected&) = default;
         expected(expected&&) = default;
         ~expected() = default;
+        expected& operator=(const expected&) = default;
 
     // Conversion constructors
     public:

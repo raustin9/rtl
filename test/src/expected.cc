@@ -125,3 +125,19 @@ TEST_CASE( "rtl::expected construct from object-based rtl::unexpected r-value", 
 
     rtl::expected<int, std::vector<int>> test = return_unexpected();
 }
+
+TEST_CASE( "rtl::expected copy assign", "[expected]" )
+{
+    rtl::expected<int, std::vector<int>> exp_1 = 1;
+    rtl::expected<int, std::vector<int>> exp_2 = 2;
+
+    exp_2 = exp_1;
+}
+
+TEST_CASE( "rtl::expected move assign", "[expected]" )
+{
+    rtl::expected<int, std::vector<int>> exp_1 = 1;
+    rtl::expected<int, std::vector<int>> exp_2 = 2;
+
+    exp_2 = std::move(exp_1);
+}

@@ -3,6 +3,8 @@
 
 #include <memory>
 
+#include "rtl/type_traits.h"
+
 #include <type_traits>
 namespace rtl
 {
@@ -14,7 +16,7 @@ namespace rtl
         template <
             typename T,
             typename ... Args,
-            std::enable_if_t<std::is_array<T>::value, int> = 0
+            std::enable_if_t<std::is_array<T>::value && !is_unbounded_array_v<T>, int> = 0
         >
         auto construct_at(T* location, Args&& ... args) -> T*
         {
@@ -27,9 +29,9 @@ namespace rtl
         template <
             typename T,
             typename ... Args,
-            std::enable_if_t<!std::is_array<T>::value, int> = 0
+            std::enable_if_t<!std::is_array<T>::value && !is_unbounded_array_v<T>, int> = 0
         >
-        auto construct_at(T* location, Args&& ... args) -> T*
+        constexpr auto construct_at(T* location, Args&& ... args) -> T*
         {
             void* loc = location;
             return ::new(loc) T(std::forward<Args>(args)...);

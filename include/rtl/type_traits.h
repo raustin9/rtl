@@ -50,6 +50,17 @@ namespace rtl
     template <typename T, typename ... Args>
     constexpr bool is_constructible_v = std::is_constructible<T, Args...>::value;
 
+    template <typename T>
+    constexpr bool is_copy_assignable_v = std::is_copy_assignable<T>::value;
+
+    template <typename T>
+    constexpr bool is_trivially_copy_assignable_v = std::is_trivially_copy_assignable<T>::value;
+
+    template <typename T>
+    constexpr bool is_move_assignable_v = std::is_move_assignable<T>::value;
+
+    template <typename T>
+    constexpr bool is_trivially_move_assignable_v = std::is_trivially_move_assignable<T>::value;
 
     // C++ 17 std::is_constructible_v
     // https://en.cppreference.com/w/cpp/types/is_constructible.html
@@ -102,6 +113,27 @@ namespace rtl
 
     template <typename T>
     constexpr bool is_nothrow_copy_constructible_v = std::is_nothrow_copy_constructible<T>::value;
+
+    template <bool B>
+    using bool_constant = std::integral_constant<bool, B>;
+
+    template <typename T>
+    constexpr bool is_bounded_array_v = false;
+
+    template <typename T, size_t Size>
+    constexpr bool is_bounded_array_v<T[Size]> = true;
+
+    template <typename T>
+    constexpr bool is_unbounded_array_v = false;
+
+    template <typename T>
+    constexpr bool is_unbounded_array_v<T[]> = true;
+
+    template <typename T>
+    struct is_bounded_array : public bool_constant<is_bounded_array_v<T>> {};
+
+    template <typename T>
+    struct is_unbounded_array : public bool_constant<is_unbounded_array_v<T>> {};
 } // namespace rtl
 
 #endif // __RTL_TYPE_TRAITS_H
