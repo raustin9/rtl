@@ -3,6 +3,7 @@
 
 #include <exception>
 #include <utility>
+#include <cassert>
 
 #include "memory.h"
 #include "detail/stl_construct.h"
@@ -730,6 +731,30 @@ namespace rtl
                 return std::move(this->m_value);
 
             throw bad_expected_access<E>(std::move(this->m_error));
+        }
+
+        const E& error() const & noexcept
+        {
+            assert(!this->m_has_value);
+            return this->m_error;
+        }
+
+        E& error() & noexcept
+        {
+            assert(!this->m_has_value);
+            return this->m_error;
+        }
+
+        const E&& error() const && noexcept
+        {
+            assert(!this->m_has_value);
+            return std::move(this->m_error);
+        }
+
+        E&& error() && noexcept
+        {
+            assert(!this->m_has_value);
+            return std::move(this->m_error);
         }
 
     private:
