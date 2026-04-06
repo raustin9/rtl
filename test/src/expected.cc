@@ -76,6 +76,7 @@ TEST_CASE( "rtl::unexpected in_place with initializer list + extra args", "[expe
 TEST_CASE( "rtl::expected default construction int", "[expected]" )
 {
     rtl::expected<int, char> test;
+    REQUIRE(test.value() == 0);
 }
 
 TEST_CASE( "rtl::expected default construction with custom object", "[expected]" )
@@ -83,10 +84,14 @@ TEST_CASE( "rtl::expected default construction with custom object", "[expected]"
     class MyObject
     {
     public:
-        MyObject() = default;
+        MyObject() : value{ 10 } {}
+        int value { 10 };
     };
 
-    rtl::expected<MyObject, char> test;
+    STATIC_REQUIRE(rtl::is_default_constructible_v<MyObject>);
+
+    rtl::expected<MyObject, char> test{};
+    REQUIRE(test.value().value == 10);
 }
 TEST_CASE( "rtl::expected conversion construction from rvalue", "[expected]" )
 {
@@ -113,6 +118,7 @@ TEST_CASE( "rtl::expected construct from object-based rtl::unexpected", "[expect
     rtl::unexpected<std::vector<int>> unexpect { rtl::in_place, { 1, 2, 3, 4, 5 }};
 
     rtl::expected<int, std::vector<int>> test = unexpect;
+    // TODO: check error()
 }
 
 TEST_CASE( "rtl::expected construct from object-based rtl::unexpected r-value", "[expected]" )
@@ -124,20 +130,90 @@ TEST_CASE( "rtl::expected construct from object-based rtl::unexpected r-value", 
     };
 
     rtl::expected<int, std::vector<int>> test = return_unexpected();
+    // TODO: check error()
 }
 
 TEST_CASE( "rtl::expected copy assign", "[expected]" )
 {
     rtl::expected<int, std::vector<int>> exp_1 = 1;
+    REQUIRE(exp_1.value() == 1);
     rtl::expected<int, std::vector<int>> exp_2 = 2;
+    REQUIRE(exp_2.value() == 2);
 
     exp_2 = exp_1;
+    REQUIRE(exp_2.value() == 1);
 }
 
 TEST_CASE( "rtl::expected move assign", "[expected]" )
 {
     rtl::expected<int, std::vector<int>> exp_1 = 1;
+    REQUIRE(exp_1.value() == 1);
+
     rtl::expected<int, std::vector<int>> exp_2 = 2;
+    REQUIRE(exp_2.value() == 2);
 
     exp_2 = std::move(exp_1);
+
+    REQUIRE(exp_2.value() == 1);
+}
+
+TEST_CASE( "rtl::expected from value assign", "[expected]" )
+{
+    int value = 10;
+    rtl::expected<int, std::vector<int>> exp_1 = 1;
+    exp_1 = value;
+
+    REQUIRE(exp_1.value() == 10);
+}
+
+TEST_CASE( "rtl::expected from unexpected assign", "[expected]" )
+{
+    rtl::unexpected<std::vector<int>> unexpect { rtl::in_place, { 1, 2, 3, 4, 5 }};
+    rtl::expected<int, std::vector<int>> exp_1;
+    exp_1 = unexpect;
+
+}
+
+TEST_CASE( "rtl::expected from r-value unexpected assign", "[expected]" )
+{
+    rtl::unexpected<std::vector<int>> unexpect { rtl::in_place, { 1, 2 }};
+    rtl::expected<int, std::vector<int>> exp_1;
+    exp_1 = std::move(unexpect);
+}
+
+TEST_CASE( "rtl::bad_expected_access from value()", "[expected]" )
+{
+    rtl::expected<int, char> exp = rtl::unexpected<char>{ rtl::in_place, 'c' };
+
+    REQUIRE_THROWS_AS(exp.value(), rtl::bad_expected_access<char>);
+}
+
+
+TEST_CASE( "rtl::bad_expected_access exception error value", "[expected]" )
+{
+    rtl::expected<int, char> exp = rtl::unexpected<char>{ rtl::in_place, 'c' };
+
+    try
+    {
+        exp.value();
+    } catch (rtl::bad_expected_access<char>& e)
+    {
+        REQUIRE(e.error() == 'c');
+    }
+}
+
+TEST_CASE( "rtl::bad_expected_access<std::string> exception error value", "[expected]" )
+{
+    std::string error_value { "something went wrong" };
+    rtl::unexpected<std::string> unex( error_value );
+
+    rtl::expected<int, std::string> exp = unex;
+
+    try
+    {
+        exp.value();
+    } catch (rtl::bad_expected_access<std::string>& e)
+    {
+        REQUIRE(e.error() == error_value);
+    }
 }

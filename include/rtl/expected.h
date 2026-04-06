@@ -242,7 +242,7 @@ namespace rtl
                         std::addressof(this->m_value),
                         std::addressof(this->m_error),
                         std::forward<U>(value)
-                        );
+                    );
                     this->m_has_value = true;
                 }
             }
@@ -256,7 +256,7 @@ namespace rtl
                         std::addressof(this->m_error),
                         std::addressof(this->m_value),
                         std::forward<V>(err)
-                        );
+                    );
                     this->m_has_value = false;
                 }
                 else
@@ -292,13 +292,12 @@ namespace rtl
         template <
             typename T,
             typename E,
-            bool = rtl::is_default_constructible_v<T>
-                && rtl::is_default_constructible_v<E>
+            bool = is_default_constructible_v<T>
         >
         struct __expected_default_base : __expected_destructible_base<T, E>
         {
             ~__expected_default_base() = default;
-            __expected_default_base() noexcept(rtl::is_nothrow_default_constructible_v<T>)
+            __expected_default_base() noexcept(is_nothrow_default_constructible_v<T>)
             {
                 this->m_has_value = true;
                 rtl::construct_at(std::addressof(this->m_value));
@@ -308,8 +307,8 @@ namespace rtl
         template <typename T, typename E>
         struct __expected_default_base<T, E, false> : __expected_destructible_base<T, E>
         {
-            __expected_default_base() = delete;
             ~__expected_default_base() = default;
+            __expected_default_base() = delete;
         };
 
         // Copy layer: default
@@ -319,7 +318,7 @@ namespace rtl
             bool = rtl::is_trivially_copy_constructible_v<T>
                 && rtl::is_trivially_copy_constructible_v<E>
         >
-        struct __expected_copy_base : __expected_destructible_base<T, E>
+        struct __expected_copy_base : __expected_default_base<T, E>
         {
             __expected_copy_base() = default;
             __expected_copy_base(const __expected_copy_base&) = default;
@@ -328,7 +327,7 @@ namespace rtl
 
         // Copy layer: non-trivial
         template <typename T, typename E>
-        struct __expected_copy_base<T, E, false> : __expected_destructible_base<T, E>
+        struct __expected_copy_base<T, E, false> : __expected_default_base<T, E>
         {
             __expected_copy_base() = default;
             __expected_copy_base(__expected_copy_base&&) = default;
@@ -591,6 +590,148 @@ namespace rtl
             construct_at(std::addressof(this->m_error), init_list, std::forward<Args>(args)...);
             this->m_has_value = false;
         }
+
+        // Assignment from value
+        template <typename U, typename = std::enable_if_t<
+            !is_same_v<remove_cvref_t<U>, expected>
+            && !__expected_detail::__is_unexpected<remove_cvref_t<U>>
+            && is_constructible_v<T, U> && !is_assignable_v<T&, U>
+            && (is_nothrow_constructible_v<T, U>
+                || is_nothrow_move_constructible_v<T>
+                || is_nothrow_move_constructible_v<E>)
+        >>
+        expected& operator=(U&& value)
+        {
+            this->_assign_value(std::forward<U>(value));
+            return *this;
+        }
+
+        template <typename G, typename = std::enable_if_t<
+            is_constructible_v<E, const G&>
+            && is_assignable_v<E&, const G&>
+            && (is_nothrow_constructible_v<E, const G&>
+                || is_nothrow_move_constructible_v<T>
+                || is_nothrow_move_constructible_v<E>)
+            >>
+        expected& operator=(const unexpected<G>& unex)
+        {
+            this->_assign_error(unex.error());
+            return *this;
+        }
+
+        template <typename G, typename = std::enable_if_t<
+            is_constructible_v<E, const G&>
+            && is_assignable_v<E&, const G&>
+            && (is_nothrow_constructible_v<E, const G&>
+                || is_nothrow_move_constructible_v<T>
+                || is_nothrow_move_constructible_v<E>)
+            >>
+        expected& operator=(unexpected<G>&& unex)
+        {
+            this->_assign_error(std::move(unex.error()));
+            return *this;
+        }
+
+        /* Modifiers */
+
+        template <typename ... Args>
+        T& emplace(Args&& ... args) noexcept
+        {
+            if (this->m_has_value)
+                destroy_at(std::addressof(this->m_value));
+            else
+            {
+                destroy_at(std::addressof(this->m_error));
+                this->m_has_value = true;
+            }
+
+            construct_at(std::addressof(this->m_value), std::forward<Args>(args)...);
+            return this->m_value;
+        }
+
+        /* Observers */
+        const T* operator->() const noexcept
+        {
+            assert(this->m_has_value);
+            return std::addressof(this->m_value);
+        }
+
+        T* operator->() noexcept
+        {
+            assert(this->m_has_value);
+            return std::addressof(this->m_value);
+        }
+
+        const T& operator*() const & noexcept
+        {
+            assert(this->m_has_value);
+            return this->m_value;
+        }
+
+        T& operator*() & noexcept
+        {
+            assert(this->m_has_value);
+            return this->m_value;
+        }
+
+        const T&& operator*() const && noexcept
+        {
+            assert(this->m_has_value);
+            return std::move(this->m_value);
+        }
+
+        T&& operator*() && noexcept
+        {
+            assert(this->m_has_value);
+            return std::move(this->m_value);
+        }
+
+        explicit operator bool() const noexcept { return this->m_has_value; }
+
+        bool has_value() const noexcept { return this->m_has_value; }
+
+        const T& value() const &
+        {
+            static_assert( is_copy_constructible_v<E> , "");
+            if (this->m_has_value)
+                return this->m_value;
+
+            throw bad_expected_access<E>(this->m_error);
+        }
+
+        T& value() &
+        {
+            static_assert( is_copy_constructible_v<E> , "");
+            if (this->m_has_value)
+                return this->m_value;
+
+            // TODO: use as_const<E>?
+            const auto& __unex = this->m_error;
+            throw bad_expected_access<E>(__unex);
+        }
+
+        const T&& value() const &&
+        {
+            static_assert( is_copy_constructible_v<E> , "");
+            static_assert( is_constructible_v<E, const E&&> , "");
+
+            if (this->m_has_value)
+                return std::move(this->m_value);
+
+            throw bad_expected_access<E>(std::move(this->m_error));
+        }
+
+        T&& value() &&
+        {
+            static_assert( is_copy_constructible_v<E> , "");
+            static_assert( is_constructible_v<E, const E&&> , "");
+
+            if (this->m_has_value)
+                return std::move(this->m_value);
+
+            throw bad_expected_access<E>(std::move(this->m_error));
+        }
+
     private:
     };
 } // namespace rtl
