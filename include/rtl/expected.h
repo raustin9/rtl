@@ -757,6 +757,59 @@ namespace rtl
             return std::move(this->m_error);
         }
 
+        template <typename U = std::remove_cv_t<T>>
+        constexpr std::remove_cv_t<T> value_or(U&& u) const &
+            noexcept(is_nothrow_copy_constructible_v<T> && is_nothrow_convertible_v<U, T>)
+        {
+            using X = std::remove_cv_t<T>;
+            static_assert( is_convertible_v<const T&, X> , "" );
+            static_assert( is_convertible_v<U, T>, "" );
+
+            if (this->m_has_value)
+                return this->m_value;
+
+            return std::forward<U>(u);
+        }
+
+
+        template <typename U = std::remove_cv_t<T>>
+        constexpr std::remove_cv_t<T> value_or(U&& u) &&
+            noexcept(is_nothrow_copy_constructible_v<T> && is_nothrow_convertible_v<U, T>)
+        {
+            using X = std::remove_cv_t<T>;
+            static_assert( is_convertible_v<T, X> , "" );
+            static_assert( is_convertible_v<U, X>, "" );
+
+            if (this->m_has_value)
+                return std::move(this->m_value);
+
+            return std::forward<U>(u);
+        }
+
+        template <typename G = E>
+        E error_or(G&& err) const &
+        {
+            static_assert( is_copy_constructible_v<E> , "" );
+            static_assert( is_convertible_v<G, E> , "" );
+
+            if (this->m_has_value)
+                return std::forward<G>(err);
+            return this->m_error;
+        }
+
+        template <typename G = E>
+        E error_or(G&& err) &&
+        {
+            static_assert( is_move_constructible_v<E> , "" );
+            static_assert( is_convertible_v<G, E> , "" );
+
+            if (this->m_has_value)
+                return std::forward<G>(err);
+            return std::move(this->m_error);
+        }
+
+        // Equality Operators
+
     private:
     };
 } // namespace rtl

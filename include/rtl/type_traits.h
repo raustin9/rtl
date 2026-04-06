@@ -134,6 +134,41 @@ namespace rtl
 
     template <typename T>
     struct is_unbounded_array : public bool_constant<is_unbounded_array_v<T>> {};
+
+    namespace __detail
+    {
+        template <typename From, typename To, bool =
+            std::is_void<From>::value || std::is_function<To>::value || is_array_v<To>>
+        class __is_nothrow_convertible_helper : std::is_void<To>
+        {
+
+        };
+
+        template <typename From, typename To>
+        class __is_nothrow_convertible_helper<From, To, false>
+        {
+            template <typename To1>
+            static void __test_aux(To1) noexcept;
+
+            template <typename From1, typename To1>
+            static bool_constant<noexcept(__test_aux<To1>(std::declval<From1>()))> __test(int);
+
+            template <typename, typename>
+            static std::false_type __test(...);
+
+        public:
+            using type = decltype(__test<From, To>(0));
+        };
+    }
+
+    template <typename From, typename To>
+    struct is_nothrow_convertible : public __detail::__is_nothrow_convertible_helper<From, To> {};
+
+    template <typename From, typename To>
+    constexpr bool is_nothrow_convertible_v = is_nothrow_convertible<From, To>::value;
+
+    template <typename From, typename To>
+    constexpr bool is_convertible_v = std::is_convertible<From, To>::value;
 } // namespace rtl
 
 #endif // __RTL_TYPE_TRAITS_H

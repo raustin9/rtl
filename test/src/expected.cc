@@ -300,3 +300,123 @@ TEST_CASE( "rtl::expected::has_value(false)", "[expected]" )
 
     REQUIRE(exp.has_value() == false);
 }
+
+class MoveOnlyObject
+{
+public:
+    constexpr static int Expected { 1 };
+
+    MoveOnlyObject() = default;
+    MoveOnlyObject(MoveOnlyObject&&) = default;
+    constexpr MoveOnlyObject& operator=(MoveOnlyObject&&) = default;
+
+    MoveOnlyObject& operator=(MoveOnlyObject&) = delete;
+    constexpr MoveOnlyObject& operator=(const MoveOnlyObject&) = delete;
+
+    int method() const { return Expected ; }
+
+    int value { Expected };
+};
+
+TEST_CASE( "rtl::expected on move-only type", "[expected]" )
+{
+    rtl::expected<MoveOnlyObject, std::string> exp = MoveOnlyObject();
+
+    REQUIRE(exp.has_value());
+    REQUIRE(exp.value().method() == MoveOnlyObject::Expected);
+    REQUIRE(exp.value().value == MoveOnlyObject::Expected);
+    REQUIRE(exp->method() == MoveOnlyObject::Expected);
+    REQUIRE(exp->value == MoveOnlyObject::Expected);
+
+    auto obj = std::move(exp.value());
+    REQUIRE(obj.method() == MoveOnlyObject::Expected);
+    REQUIRE(obj.value == MoveOnlyObject::Expected);
+}
+
+TEST_CASE( "rtl::expected return from function", "[expected]" )
+{
+    auto exp_function = [](bool flag) -> rtl::expected<int, std::string> {
+        if (flag)
+            return 10;
+
+        return rtl::unexpected<std::string>("something went wrong");
+    };
+
+    auto should_pass = exp_function(true);
+    auto should_fail = exp_function(false);
+
+    REQUIRE(should_pass.has_value());
+    REQUIRE_FALSE(should_fail.has_value());
+
+    REQUIRE(should_pass.value() == 10);
+
+    REQUIRE(should_fail.error() == std::string("something went wrong"));
+    REQUIRE(should_fail.error() == "something went wrong");
+
+    REQUIRE_THROWS(should_fail.value());
+    REQUIRE_THROWS_AS(should_fail.value(), rtl::bad_expected_access<std::string>);
+
+    REQUIRE(should_pass);
+    REQUIRE_FALSE(should_fail);
+}
+
+class CustomError
+{
+public:
+    CustomError(const std::string& message) : _message{ message } {}
+
+    const std::string& message() const { return _message; }
+
+private:
+    std::string _message;
+};
+
+TEST_CASE( "rtl::expected custom error", "[expected]" )
+{
+    auto exp_function = [](bool flag) -> rtl::expected<std::string, CustomError> {
+        if (flag)
+            return "success";
+
+        return rtl::unexpected<CustomError>(CustomError("something went wrong"));
+    };
+
+    auto should_pass = exp_function(true);
+    auto should_fail = exp_function(false);
+
+    REQUIRE(should_pass.has_value());
+    REQUIRE_FALSE(should_fail.has_value());
+
+    REQUIRE(should_pass.value() == "success");
+
+    REQUIRE(should_fail.error().message() == "something went wrong");
+
+    REQUIRE_THROWS(should_fail.value());
+    REQUIRE_THROWS_AS(should_fail.value(), rtl::bad_expected_access<CustomError>);
+
+    REQUIRE(should_pass);
+    REQUIRE_FALSE(should_fail);
+}
+
+TEST_CASE( "rtl::expected move-only value type return from function", "[expected]" )
+{
+    auto exp_function = [](bool flag) -> rtl::expected<MoveOnlyObject, CustomError> {
+        if (flag)
+            return MoveOnlyObject();
+
+        return rtl::unexpected<CustomError>(CustomError("something went wrong"));
+    };
+
+    auto should_pass = exp_function(true);
+    auto should_fail = exp_function(false);
+
+    REQUIRE(should_pass.has_value());
+    REQUIRE_FALSE(should_fail.has_value());
+
+    REQUIRE(should_fail.error().message() == "something went wrong");
+
+    REQUIRE_THROWS(should_fail.value());
+    REQUIRE_THROWS_AS(should_fail.value(), rtl::bad_expected_access<CustomError>);
+
+    REQUIRE(should_pass);
+    REQUIRE_FALSE(should_fail);
+}
