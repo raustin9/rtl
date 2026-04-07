@@ -515,6 +515,9 @@ namespace rtl
         ~expected() = default;
         expected& operator=(const expected&) = default;
 
+        using value_type = T;
+        using error_type = E;
+
     // Conversion constructors
     public:
         // Convert from value
