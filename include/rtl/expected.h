@@ -544,6 +544,20 @@ namespace rtl
         expected(const unexpected<G>& unex)
         noexcept(rtl::is_nothrow_constructible_v<E, G>)
         {
+            rtl::construct_at(std::addressof(this->m_error), unex.error());
+            this->m_has_value = false;
+        }
+
+        template <typename G = E,
+            typename = std::enable_if_t<
+                rtl::is_constructible_v<E, G>
+                && !rtl::is_same_v<G, expected>
+                && !rtl::is_same_v<G, rtl::in_place_t>
+            >
+        >
+        expected(unexpected<G>&& unex)
+        noexcept(rtl::is_nothrow_constructible_v<E, G>)
+        {
             rtl::construct_at(std::addressof(this->m_error), std::move(unex.error()));
             this->m_has_value = false;
         }
