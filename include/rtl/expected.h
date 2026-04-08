@@ -300,8 +300,8 @@ namespace rtl
             ~__expected_default_base() = default;
             __expected_default_base() noexcept(is_nothrow_default_constructible_v<T>)
             {
-                this->m_has_value = true;
                 rtl::construct_at(std::addressof(this->m_value));
+                this->m_has_value = true;
             }
         };
 
@@ -309,7 +309,7 @@ namespace rtl
         struct __expected_default_base<T, E, false> : __expected_destructible_base<T, E>
         {
             ~__expected_default_base() = default;
-            __expected_default_base() = delete;
+            __expected_default_base() = default; // Defaults this to __expected_storage_base default constructor which is a no-op
         };
 
         // Copy layer: default
