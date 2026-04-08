@@ -420,3 +420,22 @@ TEST_CASE( "rtl::expected move-only value type return from function", "[expected
     REQUIRE(should_pass);
     REQUIRE_FALSE(should_fail);
 }
+
+TEST_CASE( "non-default constructible Value object", "[expected]" )
+{
+    class Obj
+    {
+    public:
+        explicit Obj(std::unique_ptr<int> value)
+            : value{ std::move(value) }
+        {}
+
+
+
+    private:
+        std::unique_ptr<int> value;
+    };
+
+    rtl::unexpected<Obj> unex{ rtl::in_place, std::make_unique<int>(42) };
+    rtl::expected<int, Obj> exp { std::move(unex) };
+}
