@@ -88,6 +88,9 @@ namespace rtl
     constexpr bool is_trivially_assignable_v = std::is_trivially_assignable<T, Arg>::value;
 
     template <typename T>
+    constexpr bool is_trivially_default_constructible_v = std::is_trivially_default_constructible<T>::value;
+
+    template <typename T>
     constexpr bool is_trivially_destructible_v = std::is_trivially_destructible<T>::value;
 
     template <typename T, typename Arg>
@@ -114,6 +117,9 @@ namespace rtl
     template <typename T>
     constexpr bool is_nothrow_copy_constructible_v = std::is_nothrow_copy_constructible<T>::value;
 
+    template <typename T>
+    constexpr bool is_trivially_copyable_v = std::is_trivially_copyable<T>::value;
+
     template <bool B>
     using bool_constant = std::integral_constant<bool, B>;
 
@@ -134,6 +140,9 @@ namespace rtl
 
     template <typename T>
     struct is_unbounded_array : public bool_constant<is_unbounded_array_v<T>> {};
+
+    template <typename T>
+    constexpr bool is_standard_layout_v = std::is_standard_layout<T>::value;
 
     namespace __detail
     {
