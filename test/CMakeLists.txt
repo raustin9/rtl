@@ -12,6 +12,7 @@ set(RTL_TEST_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/src/as_const.cc"
         "${CMAKE_CURRENT_SOURCE_DIR}/src/construct_at.cc"
         "${CMAKE_CURRENT_SOURCE_DIR}/src/expected.cc"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/string_view.cc"
 )
 
 # Catch 2 For Testing
