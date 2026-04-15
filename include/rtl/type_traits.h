@@ -126,7 +126,7 @@ namespace rtl
     template <typename T>
     constexpr bool is_bounded_array_v = false;
 
-    template <typename T, size_t Size>
+    template <typename T, std::size_t Size>
     constexpr bool is_bounded_array_v<T[Size]> = true;
 
     template <typename T>
@@ -178,6 +178,12 @@ namespace rtl
 
     template <typename From, typename To>
     constexpr bool is_convertible_v = std::is_convertible<From, To>::value;
+
+    template <typename T>
+    struct type_identity { using type = T;};
+
+    template <typename T>
+    using type_identity_t = typename type_identity<T>::type;
 } // namespace rtl
 
 #endif // __RTL_TYPE_TRAITS_H
