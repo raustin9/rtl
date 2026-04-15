@@ -5,6 +5,34 @@ The focus of this is to map as closely to the standard as possible rather than t
 
 ## Examples
 
+#### string_view
+```c++
+void print_string(rtl::string_view sv, std::ostream& out = std::cout) noexcept
+{
+    out << sv << std::endl;
+}
+
+int main(void)
+{
+    std::string name = "Doctorate McPlaceholder";
+    print_string(name);
+}
+```
+
+#### expected<T, E>
+```c++
+rtl::expected<int, Error> get_age(std::string name) noexcept
+{
+    std::optional<Person> person = find_person(name);
+    if (!person.has_value())
+    {
+        return rtl::unexpected<Error>(Error("No person found with name"));
+    }
+
+    return person->age;    
+}
+```
+
 #### as_const
 ```c++
 class MyClass {
