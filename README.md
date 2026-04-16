@@ -4,6 +4,36 @@ A collection of useful modern (C++17 onward) utilities for use in C++ 14 librari
 The focus of this is to map as closely to the standard as possible rather than trying to "improve" anything.
 
 ## Examples
+#### span
+```c++
+void do_something(rtl::span<int> data) noexcept
+{
+    for(int num : data) {
+        process(num);
+    }
+}
+
+int main(void)
+{
+    std::vector<int> large_data {...};
+    do_something(large_data);
+}
+```
+also convertible from array
+```c++
+void do_something(rtl::span<int> data) noexcept
+{
+    for(int num : data) {
+        process(num);
+    }
+}
+
+int main(void)
+{
+    std::array<int, LARGE_AMOUNT> large_data {...};
+    do_something(large_data);
+}
+```
 
 #### string_view
 ```c++
@@ -14,7 +44,7 @@ void print_string(rtl::string_view sv, std::ostream& out = std::cout) noexcept
 
 int main(void)
 {
-    std::string name = "Doctorate McPlaceholder";
+    std::string name = "Placeholder McDoctorate";
     print_string(name);
 }
 ```
