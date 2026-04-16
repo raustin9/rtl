@@ -23,6 +23,19 @@ namespace rtl
         return __memory_detail::destroy_at(std::forward<Args>(args)...);
     }
     /* ------------------- end:   destroy_at ------------------- */
+
+    template <typename T>
+    constexpr T* to_address(T* p) noexcept
+    {
+        static_assert(!std::is_function<T>::value, "");
+        return p;
+    }
+
+    template <typename T, typename = typename std::enable_if<!std::is_pointer<T>::value>>
+    constexpr auto to_address(const T& p) noexcept
+    {
+        return to_address(p.operator->());
+    }
 } // namespace rtl
 
 #endif // __RTL_MEMORY_H
