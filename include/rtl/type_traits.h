@@ -1,5 +1,6 @@
 #ifndef __RTL_TYPE_TRAITS_H
 #define __RTL_TYPE_TRAITS_H
+#include <iterator>
 #include <type_traits>
 
 namespace rtl
@@ -168,6 +169,27 @@ namespace rtl
         public:
             using type = decltype(__test<From, To>(0));
         };
+
+        template <typename To, typename From>
+        using __is_array_convertible = std::is_convertible<From(*)[], To(*)[]>;
+
+        // contiguous iterator
+        template <typename T, typename = void>
+        struct is_contiguous_iterator : std::false_type {};
+
+        // pointers are contiguous iterators
+        template <typename T>
+        struct is_contiguous_iterator<T*> : std::true_type {};
+
+        // any iterator whose -> operator returns a pointer
+        template <typename T>
+        struct is_contiguous_iterator<T, typename std::enable_if<
+            std::is_pointer<decltype(std::declval<T>().operator->)>::value
+            >::type
+        > : std::true_type {};
+
+        template <typename T>
+        using iter_refrence_t = typename std::iterator_traits<T>::reference;
     }
 
     template <typename From, typename To>
