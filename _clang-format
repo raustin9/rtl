@@ -1,0 +1,10 @@
+# Use LLVM as the base style
+BasedOnStyle: GNU
+
+# Custom overrides
+NamespaceIndentation: All
+IndentWidth: 4
+ColumnLimit: 100
+AllowShortFunctionsOnASingleLine: All
+BreakTemplateDeclarations: Yes
+AlignConsecutiveAssignments: Consecutive

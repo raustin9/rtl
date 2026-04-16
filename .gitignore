@@ -2,3 +2,6 @@ build*
 out*
 
 .cache
+cmake*
+.idea*
+.idea/*

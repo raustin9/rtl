@@ -13,46 +13,46 @@ namespace rtl
         /* ------------------- begin: construct_at ------------------- */
 
         // Array specialization for construct_at
-        template <
-            typename T,
-            typename ... Args,
-            std::enable_if_t<std::is_array<T>::value && !is_unbounded_array_v<T>, int> = 0
-        >
-        auto construct_at(T* location, Args&& ... args) -> T*
+        template <typename T, typename... Args,
+                  std::enable_if_t<std::is_array<T>::value && !is_unbounded_array_v<T>, int> = 0>
+        auto
+        construct_at (T *location, Args &&...args) -> T *
         {
-            static_assert(sizeof...(Args) == 0, "construct_at for array types must not use any arguments to initialize the array");
+            static_assert (
+                sizeof...(Args) == 0,
+                "construct_at for array types must not use any arguments to initialize the array");
 
-            void* loc = location;
-            return ::new(loc) T[1]();
+            void *loc = location;
+            return ::new (loc) T[1]();
         }
 
-        template <
-            typename T,
-            typename ... Args,
-            std::enable_if_t<!std::is_array<T>::value && !is_unbounded_array_v<T>, int> = 0
-        >
-        constexpr auto construct_at(T* location, Args&& ... args) -> T*
+        template <typename T, typename... Args,
+                  std::enable_if_t<!std::is_array<T>::value && !is_unbounded_array_v<T>, int> = 0>
+        constexpr auto
+        construct_at (T *location, Args &&...args) -> T *
         {
-            void* loc = location;
-            return ::new(loc) T(std::forward<Args>(args)...);
+            void *loc = location;
+            return ::new (loc) T (std::forward<Args> (args)...);
         }
 
         /* ------------------- end:   construct_at ------------------- */
 
         /* ------------------- begin: destroy_at ------------------- */
         template <typename T, std::enable_if_t<!std::is_array<T>::value, int> = 0>
-        auto destroy_at(T* location) -> void
+        auto
+        destroy_at (T *location) -> void
         {
-            location->~T();
+            location->~T ();
         }
 
         template <typename T, std::enable_if_t<std::is_array<T>::value, int> = 0>
-        auto destroy_at(T* location) -> void
+        auto
+        destroy_at (T *location) -> void
         {
-            for (auto& t : *location)
-            {
-                destroy_at(std::addressof(t));
-            }
+            for (auto &t : *location)
+                {
+                    destroy_at (std::addressof (t));
+                }
         }
         /* ------------------- end:   destroy_at ------------------- */
     } // namespace __memory_detail
