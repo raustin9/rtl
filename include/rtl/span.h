@@ -138,7 +138,7 @@ namespace rtl
         template <typename Iter, typename = typename std::enable_if<
             __detail::is_contiguous_iterator<Iter>::value
             >::type>
-        constexpr explicit span(Iter first, size_type count) noexcept
+        constexpr span(Iter first, size_type count) noexcept
             : m_ptr(to_address(first)), m_extent(count)
         {}
 
@@ -154,6 +154,11 @@ namespace rtl
         constexpr span(const std::array<U, ArrayExtent>& arr) noexcept
             : m_ptr( arr.data() )
         , m_extent(__make_extent<ArrayExtent>{})
+        {}
+
+        // TODO: should we have a conversion from const std::vector& ?
+        constexpr span(std::vector<element_type>& v) noexcept
+            : m_ptr( v.data() ), m_extent(v.size())
         {}
 
         constexpr span(const span&) noexcept = default;

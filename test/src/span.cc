@@ -36,6 +36,33 @@ TEST_CASE( "construct from std::array in function", "[span]" )
     REQUIRE(foo(arr));
 }
 
+TEST_CASE( "construct from std::vector", "[span]" )
+{
+    std::vector<int> v = {{1, 2, 3, 4, 5}};
+    rtl::span<int> s = v;
+
+    std::size_t i = 0;
+    for (int num : s)
+    {
+        REQUIRE(num == v[i++]);
+    }
+}
+
+TEST_CASE( "construct from std::vector as parameter", "[span]" )
+{
+    std::vector<int> v = {{1, 2, 3, 4, 5}};
+
+    auto foo = [=](rtl::span<int> data) {
+        REQUIRE(data.size() == v.size());
+        for (std::size_t i = 0; i < data.size(); i++)
+        {
+            REQUIRE(data[i] == v[i]);
+        }
+    };
+
+    foo(v);
+}
+
 TEST_CASE( "subspan (1)", "[span]" )
 {
     std::array<int, 10> arr = {{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}};
