@@ -187,7 +187,7 @@ namespace rtl
 #ifdef CXX_LIVE_MIN_VERSION_17
     template <typename E>
     unexpected(E) -> unexpected<E>;
-#endif // C++ 17
+#endif // CXX_LIVE_MIN_VERSION_17
 
     namespace __expected_detail
     {
@@ -251,6 +251,8 @@ namespace rtl
         template <typename T, typename E>
         struct __expected_storage_base
         {
+            // NOLINTNEXTLINE -> initialization of members is handled deeper in the inheritance
+            // hierarchy
             __expected_storage_base() noexcept {}
             ~__expected_storage_base() noexcept {}
             union
