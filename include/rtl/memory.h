@@ -6,8 +6,7 @@
 
 namespace rtl
 {
-    /* ------------------- begin: construct_at ------------------- */
-    // Alias for __detail::construct_at
+    // https://en.cppreference.com/w/cpp/memory/construct_at.html
     template <typename... Args>
     auto
     construct_at(Args &&...args)
@@ -15,17 +14,14 @@ namespace rtl
     {
         return __memory_detail::construct_at(std::forward<Args>(args)...);
     }
-    /* ------------------- end:   construct_at ------------------- */
 
-    /* ------------------- begin: destroy_at ------------------- */
-    // Alias for __detail::destroy_at
+    // https://en.cppreference.com/w/cpp/memory/destroy_at.html
     template <typename... Args>
     auto
     destroy_at(Args &&...args) -> decltype(__memory_detail::destroy_at(std::forward<Args>(args)...))
     {
         return __memory_detail::destroy_at(std::forward<Args>(args)...);
     }
-    /* ------------------- end:   destroy_at ------------------- */
 
     template <typename T>
     constexpr T *

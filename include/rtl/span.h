@@ -1,6 +1,7 @@
 #ifndef __RTL_SPAN_H
 #define __RTL_SPAN_H
 
+#include "detail/prelude.h"
 #include "detail/stl_iterator.h"
 #include "memory.h"
 #include "type_traits.h"
@@ -9,8 +10,16 @@
 #include <assert.h>
 #include <cstddef>
 
+#ifdef CXX_LIVE_MIN_VERSION_20
+#include <span>
+#endif // CXX_LIVE_MIN_VERSION_20
+
 namespace rtl
 {
+#ifdef CXX_LIVE_MIN_VERSION_20
+    template <typename T, std::size_t Extent = std::dynamic_extent>
+    using span = std::span<T, Extent>;
+#else
     constexpr std::size_t dynamic_extent = static_cast<std::size_t>(-1);
 
     template <typename T, std::size_t Extent>
@@ -363,7 +372,7 @@ namespace rtl
         template <std::size_t Offset, std::size_t Count = dynamic_extent>
         constexpr auto
         subspan() const noexcept ->
-            typename std::enable_if_t<__detail::__is_dynamic_offset<Extent>,
+            std::enable_if_t<__detail::__is_dynamic_offset<Extent>,
                                       span<element_type, subspan_extent<Offset, Count>()>>
         {
             assert(Offset <= size());
@@ -379,7 +388,7 @@ namespace rtl
         template <std::size_t Offset, std::size_t Count = dynamic_extent>
         constexpr auto
         subspan() const noexcept ->
-            typename std::enable_if_t<!__detail::__is_dynamic_offset<Extent>
+            std::enable_if_t<!__detail::__is_dynamic_offset<Extent>
                                           && __detail::__is_dynamic_offset<Count>,
                                       span<element_type, subspan_extent<Offset, Count>()>>
         {
@@ -412,7 +421,7 @@ namespace rtl
         pointer m_ptr;
         __detail::__extent_storage<Extent> m_extent;
     };
-
+#endif // CXX_LIVE_MIN_VERSION_23
 } // namespace rtl
 
 #endif // __RTL_SPAN_H

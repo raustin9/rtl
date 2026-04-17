@@ -1,12 +1,21 @@
 #ifndef __RTL_UTILITY_H
 #define __RTL_UTILITY_H
 
-#include <iostream>
+#include "detail/prelude.h"
 #include <type_traits>
+#include <utility>
 
 namespace rtl
 {
-    /* ------------------- begin: as_const ------------------- */
+#ifdef CXX_LIVE_MIN_VERSION_17
+    template <typename T>
+    auto
+    as_const(T &t) noexcept -> std::add_const_t<T &>
+    {
+        return std::as_const(t);
+    }
+#else
+    // https://en.cppreference.com/w/cpp/utility/as_const.html
     template <typename T>
     auto
     as_const(T &t) noexcept -> typename std::add_const<T>::type
@@ -16,9 +25,12 @@ namespace rtl
 
     template <typename T>
     auto as_const(const T &&) noexcept -> typename std::add_const<T>::type = delete;
-    /* ------------------- end:   as_const ------------------- */
+#endif // CXX_LIVE_MIN_VERSION_17
 
-    // C++ 17 std::in_place_t
+#ifdef CXX_LIVE_MIN_VERSION_17
+    using in_place_t = std::in_place_t;
+    constexpr in_place_t in_place{};
+#else
     // https://en.cppreference.com/w/cpp/utility/in_place.html
     struct in_place_t
     {
@@ -26,6 +38,7 @@ namespace rtl
     };
 
     constexpr in_place_t in_place{};
+#endif // CXX_LIVE_MIN_VERSION_17
 } // namespace rtl
 
 #endif // __RTL_UTILITY_H

@@ -10,8 +10,23 @@
 #include "type_traits.h"
 #include "utility.h"
 
+#ifdef CXX_LIVE_MIN_VERSION_23
+#include <expected>
+#endif // CXX_LIVE_MIN_VERSION_23
+
 namespace rtl
 {
+    // Use STl if available
+#ifdef CXX_LIVE_MIN_VERSION_23
+    template <typename E>
+    using unexpected = std::unexpected<E>;
+
+    template <typename E>
+    using bad_expected_access = std::bad_expected_access<E>;
+
+    template <typename T, typename E>
+    using expected = std::expected<T, E>;
+#else
     template <typename T, typename E>
     class expected;
 
@@ -838,6 +853,7 @@ namespace rtl
 
         // Equality Operators
     };
+#endif // CXX_LIVE_MIN_VERSION_23
 } // namespace rtl
 
 #endif // __RTL_EXPECTED_H
