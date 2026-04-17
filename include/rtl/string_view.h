@@ -1,8 +1,8 @@
 #ifndef __RTL_STRING_VIEW
 #define __RTL_STRING_VIEW
 
-#include "detail/prelude.h"
 #include "detail/functional_hash.h"
+#include "detail/prelude.h"
 #include "type_traits.h"
 
 #include <cassert>
@@ -22,7 +22,7 @@ namespace rtl
     template <typename CharT, typename Traits = std::char_traits<CharT>>
     using basic_string_view = std::basic_string_view<CharT, Traits>;
 
-    using string_view = std::string_view;
+    using string_view  = std::string_view;
     using wstring_view = std::wstring_view;
 #ifdef CXX_LIVE_MIN_VERSION_20
     using u8string_view = std::u8string_view;

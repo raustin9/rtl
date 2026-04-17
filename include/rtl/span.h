@@ -371,9 +371,9 @@ namespace rtl
 
         template <std::size_t Offset, std::size_t Count = dynamic_extent>
         constexpr auto
-        subspan() const noexcept ->
-            std::enable_if_t<__detail::__is_dynamic_offset<Extent>,
-                                      span<element_type, subspan_extent<Offset, Count>()>>
+        subspan() const noexcept
+            -> std::enable_if_t<__detail::__is_dynamic_offset<Extent>,
+                                span<element_type, subspan_extent<Offset, Count>()>>
         {
             assert(Offset <= size());
 
@@ -387,10 +387,10 @@ namespace rtl
 
         template <std::size_t Offset, std::size_t Count = dynamic_extent>
         constexpr auto
-        subspan() const noexcept ->
-            std::enable_if_t<!__detail::__is_dynamic_offset<Extent>
-                                          && __detail::__is_dynamic_offset<Count>,
-                                      span<element_type, subspan_extent<Offset, Count>()>>
+        subspan() const noexcept
+            -> std::enable_if_t<!__detail::__is_dynamic_offset<Extent>
+                                    && __detail::__is_dynamic_offset<Count>,
+                                span<element_type, subspan_extent<Offset, Count>()>>
         {
             static_assert(Offset <= Extent, "");
 
