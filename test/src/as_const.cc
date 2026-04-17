@@ -9,32 +9,32 @@ class ConstTracker
     static constexpr int NonConstValue = 2;
 
     int
-    get () const
+    get() const
     {
         return ConstValue;
     }
     int
-    get ()
+    get()
     {
         return NonConstValue;
     }
 
     static int
-    test_get (ConstTracker &tracker)
+    test_get(ConstTracker &tracker)
     {
-        return tracker.get ();
+        return tracker.get();
     }
     static int
-    test_const_get (const ConstTracker &tracker)
+    test_const_get(const ConstTracker &tracker)
     {
-        return rtl::as_const (tracker).get ();
+        return rtl::as_const(tracker).get();
     }
 };
 
-TEST_CASE ("Const method called using rtl::as_const", "[as_const]")
+TEST_CASE("Const method called using rtl::as_const", "[as_const]")
 {
     ConstTracker tracker{};
 
-    REQUIRE (ConstTracker::test_get (tracker) == ConstTracker::NonConstValue);
-    REQUIRE (ConstTracker::test_const_get (tracker) == ConstTracker::ConstValue);
+    REQUIRE(ConstTracker::test_get(tracker) == ConstTracker::NonConstValue);
+    REQUIRE(ConstTracker::test_const_get(tracker) == ConstTracker::ConstValue);
 }

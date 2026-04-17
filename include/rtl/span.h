@@ -11,7 +11,7 @@
 
 namespace rtl
 {
-    constexpr std::size_t dynamic_extent = static_cast<std::size_t> (-1);
+    constexpr std::size_t dynamic_extent = static_cast<std::size_t>(-1);
 
     template <typename T, std::size_t Extent>
     class span;
@@ -39,18 +39,18 @@ namespace rtl
           public:
             constexpr static std::size_t extent = Extent;
 
-            constexpr __extent_storage (std::size_t n) noexcept
+            constexpr __extent_storage(std::size_t n) noexcept
             {
-                assert (extent == Extent && "__extent_storage(N): N != span::extent");
+                assert(extent == Extent && "__extent_storage(N): N != span::extent");
             }
 
-            constexpr __extent_storage (std::integral_constant<std::size_t, Extent>) noexcept {}
+            constexpr __extent_storage(std::integral_constant<std::size_t, Extent>) noexcept {}
 
             template <std::size_t G>
-            __extent_storage (std::integral_constant<std::size_t, G>) = delete;
+            __extent_storage(std::integral_constant<std::size_t, G>) = delete;
 
             static constexpr size_t
-            get_extent () noexcept
+            get_extent() noexcept
             {
                 return Extent;
             }
@@ -60,10 +60,10 @@ namespace rtl
         class __extent_storage<dynamic_extent>
         {
           public:
-            constexpr __extent_storage (std::size_t n) noexcept : m_extent{ n } {}
+            constexpr __extent_storage(std::size_t n) noexcept : m_extent{ n } {}
 
             constexpr size_t
-            get_extent () const noexcept
+            get_extent() const noexcept
             {
                 return m_extent;
             }
@@ -85,7 +85,7 @@ namespace rtl
         template <std::size_t Offset, std::size_t Count>
         static constexpr typename std::enable_if<!__detail::__is_dynamic_offset<Count>
                                                  && !__detail::__is_dynamic_offset<Offset>>::type
-        subspan_extent () noexcept
+        subspan_extent() noexcept
         {
             return Count;
         }
@@ -93,7 +93,7 @@ namespace rtl
         template <std::size_t Offset, std::size_t Count>
         static constexpr typename std::enable_if<__detail::__is_dynamic_offset<Offset>
                                                  && !__detail::__is_dynamic_offset<Count>>::type
-        subspan_extent () noexcept
+        subspan_extent() noexcept
         {
             return Extent - Offset;
         }
@@ -101,7 +101,7 @@ namespace rtl
         template <std::size_t Offset, std::size_t Count>
         static constexpr typename std::enable_if<!__detail::__is_dynamic_offset<Offset>
                                                  && !__detail::__is_dynamic_offset<Count>>::type
-        subspan_extent () noexcept
+        subspan_extent() noexcept
         {
             return dynamic_extent;
         }
@@ -142,119 +142,118 @@ namespace rtl
       public:
         template <typename = typename std::enable_if<__detail::__is_dynamic_offset<Extent>
                                                      || Extent == 0>::type>
-        constexpr span () noexcept : m_ptr{ nullptr }, m_extent (__make_extent<0>{})
+        constexpr span() noexcept : m_ptr{ nullptr }, m_extent(__make_extent<0>{})
         {
         }
 
         template <std::size_t ArrayExtent,
                   typename = typename std::enable_if<__detail::__is_dynamic_offset<Extent>
                                                      || ArrayExtent == Extent>::type>
-        constexpr span (type_identity_t<element_type> (&arr)[ArrayExtent]) noexcept
-            : m_ptr (arr), m_extent (__make_extent<ArrayExtent>{})
+        constexpr span(type_identity_t<element_type> (&arr)[ArrayExtent]) noexcept
+            : m_ptr(arr), m_extent(__make_extent<ArrayExtent>{})
         {
         }
 
         template <typename Iter,
                   typename
                   = typename std::enable_if<__detail::is_contiguous_iterator<Iter>::value>::type>
-        constexpr span (Iter first, size_type count) noexcept
-            : m_ptr (to_address (first)), m_extent (count)
+        constexpr span(Iter first, size_type count) noexcept
+            : m_ptr(to_address(first)), m_extent(count)
         {
         }
 
         template <typename U, std::size_t ArrayExtent,
                   typename = typename std::enable_if_t<
                       __detail::__is_dynamic_offset<Extent> || ArrayExtent == Extent, void>>
-        constexpr span (std::array<U, ArrayExtent> &arr) noexcept
-            : m_ptr (arr.data ()), m_extent (__make_extent<ArrayExtent>{})
+        constexpr span(std::array<U, ArrayExtent> &arr) noexcept
+            : m_ptr(arr.data()), m_extent(__make_extent<ArrayExtent>{})
         {
         }
 
         template <typename U, std::size_t ArrayExtent,
                   typename
                   = typename std::enable_if_t<__is_compatible_array<U, ArrayExtent>::value, void>>
-        constexpr span (const std::array<U, ArrayExtent> &arr) noexcept
-            : m_ptr (arr.data ()), m_extent (__make_extent<ArrayExtent>{})
+        constexpr span(const std::array<U, ArrayExtent> &arr) noexcept
+            : m_ptr(arr.data()), m_extent(__make_extent<ArrayExtent>{})
         {
         }
 
         // TODO: should we have a conversion from const std::vector& ?
-        constexpr span (std::vector<element_type> &v) noexcept
-            : m_ptr (v.data ()), m_extent (v.size ())
+        constexpr span(std::vector<element_type> &v) noexcept : m_ptr(v.data()), m_extent(v.size())
         {
         }
 
-        constexpr span (const span &) noexcept = default;
+        constexpr span(const span &) noexcept = default;
 
         template <typename U, std::size_t UExtent,
                   typename = typename std::enable_if_t<
                       (__detail::__is_dynamic_offset<Extent>
                        || __detail::__is_dynamic_offset<UExtent> || UExtent == Extent)
                       && (__detail::__is_array_convertible<T, U>::value)>>
-        constexpr explicit span (const span<U, UExtent> &other) noexcept
-            : m_ptr (other.data ()), m_extent (other.size ())
+        constexpr explicit span(const span<U, UExtent> &other) noexcept
+            : m_ptr(other.data()), m_extent(other.size())
         {
         }
 
-        constexpr span &operator= (const span &) noexcept = default;
+        constexpr span &operator=(const span &) noexcept = default;
 
         // observers
       public:
         constexpr size_type
-        size () const noexcept
+        size() const noexcept
         {
-            return m_extent.get_extent ();
+            return m_extent.get_extent();
         }
 
         constexpr size_type
-        size_bytes () const noexcept
+        size_bytes() const noexcept
         {
-            return m_extent.get_extent () * sizeof (element_type);
+            return m_extent.get_extent() * sizeof(element_type);
         }
 
         constexpr bool
-        empty () const noexcept
+        empty() const noexcept
         {
-            return size () == 0;
+            return size() == 0;
         }
 
         constexpr reference
-        front () const noexcept
+        front() const noexcept
         {
-            assert (!empty () && "calling span::front() on empty span");
+            assert(!empty() && "calling span::front() on empty span");
             return *this->m_ptr;
         }
 
         constexpr reference
-        back () const noexcept
+        back() const noexcept
         {
-            assert (!empty () && "calling span::back() on empty span");
-            return *(this->m_ptr + (size () - 1));
+            assert(!empty() && "calling span::back() on empty span");
+            return *(this->m_ptr + (size() - 1));
         }
 
         constexpr reference
-        operator[] (size_type idx) const noexcept
+        operator[](size_type idx) const noexcept
         {
-            assert (!empty () && "calling span::operator[]() on empty span");
+            assert(!empty() && "calling span::operator[]() on empty span");
             return *(this->m_ptr + idx);
         }
 
         constexpr reference
-        at (size_type idx) const
+        at(size_type idx) const
         {
-            if (idx >= size ())
+            if ( idx >= size() )
                 {
                     char msg[200]{};
-                    snprintf (msg, 200, "span::at(%zu) out-of-range for span of size %zu", idx,
-                              size ());
-                    throw std::out_of_range (msg);
+                    snprintf(msg, 200, "span::at(%zu) out-of-range for span of size %zu", idx,
+                             size());
+                    throw std::out_of_range(msg);
                 }
 
             return *(this->m_ptr + idx);
         }
 
         constexpr pointer
-        data () const noexcept
+        data() const noexcept
         {
             return this->m_ptr;
         }
@@ -262,47 +261,47 @@ namespace rtl
         // iterator
       public:
         constexpr iterator
-        begin () const noexcept
+        begin() const noexcept
         {
-            return iterator (this->m_ptr);
+            return iterator(this->m_ptr);
         }
         constexpr iterator
-        end () const noexcept
+        end() const noexcept
         {
-            return iterator (this->m_ptr + this->size ());
+            return iterator(this->m_ptr + this->size());
         }
 
         constexpr reverse_iterator
-        rbegin () const noexcept
+        rbegin() const noexcept
         {
-            return reverse_iterator (this->end ());
+            return reverse_iterator(this->end());
         }
         constexpr reverse_iterator
-        rend () const noexcept
+        rend() const noexcept
         {
-            return reverse_iterator (this->begin ());
+            return reverse_iterator(this->begin());
         }
 
         constexpr iterator
-        cbegin () const noexcept
+        cbegin() const noexcept
         {
-            return this->begin ();
+            return this->begin();
         }
         constexpr iterator
-        cend () const noexcept
+        cend() const noexcept
         {
-            return this->end ();
+            return this->end();
         }
 
         constexpr reverse_iterator
-        crbegin () const noexcept
+        crbegin() const noexcept
         {
-            return this->rbegin ();
+            return this->rbegin();
         }
         constexpr reverse_iterator
-        crend () const noexcept
+        crend() const noexcept
         {
-            return this->rend ();
+            return this->rend();
         }
 
         // subviews
@@ -310,100 +309,100 @@ namespace rtl
         template <std::size_t Count>
         constexpr typename std::enable_if<__detail::__is_dynamic_offset<Count>,
                                           span<element_type, Count>>::type
-        first () const noexcept
+        first() const noexcept
         {
-            assert (Count <= size ());
+            assert(Count <= size());
             using S = span<element_type, Count>;
-            return S (SizedPtr{ this->m_ptr });
+            return S(SizedPtr{ this->m_ptr });
         }
 
         template <std::size_t Count>
         constexpr typename std::enable_if<!__detail::__is_dynamic_offset<Count>,
                                           span<element_type, Count>>::type
-        first () const noexcept
+        first() const noexcept
         {
-            static_assert (Count <= Extent, "");
+            static_assert(Count <= Extent, "");
             using S = span<element_type, Count>;
-            return S (SizedPtr{ this->m_ptr });
+            return S(SizedPtr{ this->m_ptr });
         }
 
         constexpr span<element_type, dynamic_extent>
-        first (size_type count) const noexcept
+        first(size_type count) const noexcept
         {
-            assert (count <= size ());
+            assert(count <= size());
             return span<element_type>{ this->m_ptr, count };
         }
 
         template <std::size_t Count>
         constexpr typename std::enable_if<__detail::__is_dynamic_offset<Count>,
                                           span<element_type, Count>>::type
-        last () const noexcept
+        last() const noexcept
         {
-            assert (Count <= size ());
+            assert(Count <= size());
             using S = span<element_type, Count>;
-            return S (SizedPtr{ this->data () + (this->size () - Count) });
+            return S(SizedPtr{ this->data() + (this->size() - Count) });
         }
 
         template <std::size_t Count>
         constexpr typename std::enable_if<!__detail::__is_dynamic_offset<Count>,
                                           span<element_type, Count>>::type
-        last () const noexcept
+        last() const noexcept
         {
-            static_assert (Count <= Extent, "");
+            static_assert(Count <= Extent, "");
             using S = span<element_type, Count>;
-            return S (SizedPtr{ this->data () + (this->size () - Count) });
+            return S(SizedPtr{ this->data() + (this->size() - Count) });
         }
 
         constexpr span<element_type, dynamic_extent>
-        last (size_type count) const noexcept
+        last(size_type count) const noexcept
         {
-            assert (count <= size ());
-            return span<element_type>{ this->data () + (this->size () - count), count };
+            assert(count <= size());
+            return span<element_type>{ this->data() + (this->size() - count), count };
         }
 
         template <std::size_t Offset, std::size_t Count = dynamic_extent>
         constexpr auto
-        subspan () const noexcept ->
+        subspan() const noexcept ->
             typename std::enable_if_t<__detail::__is_dynamic_offset<Extent>,
-                                      span<element_type, subspan_extent<Offset, Count> ()>>
+                                      span<element_type, subspan_extent<Offset, Count>()>>
         {
-            assert (Offset <= size ());
+            assert(Offset <= size());
 
-            using S = span<element_type, subspan_extent<Offset, Count> ()>;
+            using S = span<element_type, subspan_extent<Offset, Count>()>;
 
-            assert (Count <= size ());
-            assert (Count <= (size () - Offset));
+            assert(Count <= size());
+            assert(Count <= (size() - Offset));
 
-            return S (SizedPtr{ this->data () + Offset });
+            return S(SizedPtr{ this->data() + Offset });
         }
 
         template <std::size_t Offset, std::size_t Count = dynamic_extent>
         constexpr auto
-        subspan () const noexcept ->
+        subspan() const noexcept ->
             typename std::enable_if_t<!__detail::__is_dynamic_offset<Extent>
                                           && __detail::__is_dynamic_offset<Count>,
-                                      span<element_type, subspan_extent<Offset, Count> ()>>
+                                      span<element_type, subspan_extent<Offset, Count>()>>
         {
-            static_assert (Offset <= Extent, "");
+            static_assert(Offset <= Extent, "");
 
-            using S = span<element_type, subspan_extent<Offset, Count> ()>;
+            using S = span<element_type, subspan_extent<Offset, Count>()>;
 
-            return S (this->data () + Offset, this->size () - Offset);
+            return S(this->data() + Offset, this->size() - Offset);
         }
 
         constexpr span<element_type, dynamic_extent>
-        subspan (size_type offset, size_type count = dynamic_extent) const noexcept
+        subspan(size_type offset, size_type count = dynamic_extent) const noexcept
         {
-            assert (offset <= size ());
-            if (count == dynamic_extent)
-                count = this->size () - offset;
+            assert(offset <= size());
+            if ( count == dynamic_extent )
+                count = this->size() - offset;
             else
                 {
-                    assert (count <= size ());
-                    assert (offset + count <= size ());
+                    assert(count <= size());
+                    assert(offset + count <= size());
                 }
 
-            return span<element_type> (this->data () + offset, count);
+            return span<element_type>(this->data() + offset, count);
         }
 
       private:

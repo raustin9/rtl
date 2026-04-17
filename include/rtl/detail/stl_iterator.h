@@ -29,20 +29,20 @@ namespace rtl
 
             // constructors
           public:
-            __normal_iterator () noexcept : m_current () {}
+            __normal_iterator() noexcept : m_current() {}
 
-            explicit constexpr __normal_iterator (const Iterator &i) noexcept : m_current (i) {}
+            explicit constexpr __normal_iterator(const Iterator &i) noexcept : m_current(i) {}
 
             template <typename Iter, typename = __convertible_from<Iter>>
-            constexpr __normal_iterator (const __normal_iterator<Iter, Container> &i) noexcept
-                : m_current (i.base ())
+            constexpr __normal_iterator(const __normal_iterator<Iter, Container> &i) noexcept
+                : m_current(i.base())
             {
             }
 
             // forward iterator requirements
           public:
             constexpr reference
-            operator* () const noexcept
+            operator*() const noexcept
             {
                 return *m_current;
             }
@@ -54,69 +54,69 @@ namespace rtl
             }
 
             constexpr __normal_iterator &
-            operator++ () noexcept
+            operator++() noexcept
             {
                 ++m_current;
                 return *this;
             }
 
             constexpr __normal_iterator &
-            operator++ (int) noexcept
+            operator++(int) noexcept
             {
-                return __normal_iterator (m_current++);
+                return __normal_iterator(m_current++);
             }
 
             // bi-directional iterator requirements
           public:
             constexpr __normal_iterator &
-            operator-- () noexcept
+            operator--() noexcept
             {
                 --m_current;
                 return *this;
             }
 
             constexpr __normal_iterator &
-            operator-- (int) noexcept
+            operator--(int) noexcept
             {
-                return __normal_iterator (m_current--);
+                return __normal_iterator(m_current--);
             }
 
             // random access requirements
           public:
             constexpr reference
-            operator[] (difference_type n) const noexcept
+            operator[](difference_type n) const noexcept
             {
                 return m_current[n];
             }
 
             constexpr __normal_iterator &
-            operator+= (difference_type n) noexcept
+            operator+=(difference_type n) noexcept
             {
                 m_current += n;
                 return *this;
             }
 
             constexpr __normal_iterator
-            operator+ (difference_type n) noexcept
+            operator+(difference_type n) noexcept
             {
-                return __normal_iterator (m_current + n);
+                return __normal_iterator(m_current + n);
             }
 
             constexpr __normal_iterator &
-            operator-= (difference_type n) noexcept
+            operator-=(difference_type n) noexcept
             {
                 m_current -= n;
                 return *this;
             }
 
             constexpr __normal_iterator
-            operator- (difference_type n) noexcept
+            operator-(difference_type n) noexcept
             {
-                return __normal_iterator (m_current - n);
+                return __normal_iterator(m_current - n);
             }
 
             constexpr const Iterator &
-            base () const noexcept
+            base() const noexcept
             {
                 return m_current;
             }
@@ -124,109 +124,109 @@ namespace rtl
           private:
             template <typename Iter>
             friend constexpr bool
-            operator== (const __normal_iterator &lhs,
-                        const __normal_iterator<Iter, Container> &rhs) noexcept
+            operator==(const __normal_iterator &lhs,
+                       const __normal_iterator<Iter, Container> &rhs) noexcept
             {
-                return lhs.base () == rhs.base ();
+                return lhs.base() == rhs.base();
             }
 
             friend constexpr bool
-            operator== (const __normal_iterator &lhs, const __normal_iterator &rhs) noexcept
+            operator==(const __normal_iterator &lhs, const __normal_iterator &rhs) noexcept
             {
-                return lhs.base () == rhs.base ();
+                return lhs.base() == rhs.base();
             }
 
             template <typename Iter>
             friend constexpr bool
-            operator!= (const __normal_iterator &lhs,
-                        const __normal_iterator<Iter, Container> &rhs) noexcept
+            operator!=(const __normal_iterator &lhs,
+                       const __normal_iterator<Iter, Container> &rhs) noexcept
             {
-                return lhs.base () != rhs.base ();
+                return lhs.base() != rhs.base();
             }
 
             friend constexpr bool
-            operator!= (const __normal_iterator &lhs, const __normal_iterator &rhs) noexcept
+            operator!=(const __normal_iterator &lhs, const __normal_iterator &rhs) noexcept
             {
-                return lhs.base () != rhs.base ();
+                return lhs.base() != rhs.base();
             }
 
             // random access
           private:
             template <typename Iter>
             friend constexpr inline bool
-            operator< (const __normal_iterator *lhs,
+            operator<(const __normal_iterator *lhs,
+                      const __normal_iterator<Iter, Container> &rhs) noexcept
+            {
+                return lhs->base() < rhs.base();
+            }
+
+            friend constexpr inline bool
+            operator<(const __normal_iterator *lhs, const __normal_iterator &rhs) noexcept
+            {
+                return lhs->base() < rhs.base();
+            }
+
+            template <typename Iter>
+            friend constexpr inline bool
+            operator>(const __normal_iterator *lhs,
+                      const __normal_iterator<Iter, Container> &rhs) noexcept
+            {
+                return lhs->base() > rhs.base();
+            }
+
+            friend constexpr inline bool
+            operator>(const __normal_iterator *lhs, const __normal_iterator &rhs) noexcept
+            {
+                return lhs->base() > rhs.base();
+            }
+
+            template <typename Iter>
+            friend constexpr inline bool
+            operator<=(const __normal_iterator *lhs,
                        const __normal_iterator<Iter, Container> &rhs) noexcept
             {
-                return lhs->base () < rhs.base ();
+                return lhs->base() <= rhs.base();
             }
 
             friend constexpr inline bool
-            operator< (const __normal_iterator *lhs, const __normal_iterator &rhs) noexcept
+            operator<=(const __normal_iterator *lhs, const __normal_iterator &rhs) noexcept
             {
-                return lhs->base () < rhs.base ();
+                return lhs->base() <= rhs.base();
             }
 
             template <typename Iter>
             friend constexpr inline bool
-            operator> (const __normal_iterator *lhs,
+            operator>=(const __normal_iterator *lhs,
                        const __normal_iterator<Iter, Container> &rhs) noexcept
             {
-                return lhs->base () > rhs.base ();
+                return lhs->base() >= rhs.base();
             }
 
             friend constexpr inline bool
-            operator> (const __normal_iterator *lhs, const __normal_iterator &rhs) noexcept
+            operator>=(const __normal_iterator *lhs, const __normal_iterator &rhs) noexcept
             {
-                return lhs->base () > rhs.base ();
-            }
-
-            template <typename Iter>
-            friend constexpr inline bool
-            operator<= (const __normal_iterator *lhs,
-                        const __normal_iterator<Iter, Container> &rhs) noexcept
-            {
-                return lhs->base () <= rhs.base ();
-            }
-
-            friend constexpr inline bool
-            operator<= (const __normal_iterator *lhs, const __normal_iterator &rhs) noexcept
-            {
-                return lhs->base () <= rhs.base ();
-            }
-
-            template <typename Iter>
-            friend constexpr inline bool
-            operator>= (const __normal_iterator *lhs,
-                        const __normal_iterator<Iter, Container> &rhs) noexcept
-            {
-                return lhs->base () >= rhs.base ();
-            }
-
-            friend constexpr inline bool
-            operator>= (const __normal_iterator *lhs, const __normal_iterator &rhs) noexcept
-            {
-                return lhs->base () >= rhs.base ();
+                return lhs->base() >= rhs.base();
             }
 
             template <typename Iter>
             friend constexpr auto
-            operator- (const __normal_iterator &lhs,
-                       const __normal_iterator<Iter, Container> &rhs) noexcept
-                -> decltype (lhs.base () - rhs.base ())
+            operator-(const __normal_iterator &lhs,
+                      const __normal_iterator<Iter, Container> &rhs) noexcept
+                -> decltype(lhs.base() - rhs.base())
             {
-                return lhs.base () - rhs.base ();
+                return lhs.base() - rhs.base();
             }
 
             friend constexpr difference_type
-            operator- (const __normal_iterator &lhs, const __normal_iterator &rhs) noexcept
+            operator-(const __normal_iterator &lhs, const __normal_iterator &rhs) noexcept
             {
-                return lhs.base () - rhs.base ();
+                return lhs.base() - rhs.base();
             }
 
             friend __normal_iterator
-            operator+ (difference_type n, const __normal_iterator &rhs) noexcept
+            operator+(difference_type n, const __normal_iterator &rhs) noexcept
             {
-                return __normal_iterator (rhs.base () + n);
+                return __normal_iterator(rhs.base() + n);
             }
         };
     } // namespace __detail

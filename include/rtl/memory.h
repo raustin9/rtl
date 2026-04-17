@@ -10,10 +10,10 @@ namespace rtl
     // Alias for __detail::construct_at
     template <typename... Args>
     auto
-    construct_at (Args &&...args)
-        -> decltype (__memory_detail::construct_at (std::forward<Args> (args)...))
+    construct_at(Args &&...args)
+        -> decltype(__memory_detail::construct_at(std::forward<Args>(args)...))
     {
-        return __memory_detail::construct_at (std::forward<Args> (args)...);
+        return __memory_detail::construct_at(std::forward<Args>(args)...);
     }
     /* ------------------- end:   construct_at ------------------- */
 
@@ -21,26 +21,25 @@ namespace rtl
     // Alias for __detail::destroy_at
     template <typename... Args>
     auto
-    destroy_at (Args &&...args)
-        -> decltype (__memory_detail::destroy_at (std::forward<Args> (args)...))
+    destroy_at(Args &&...args) -> decltype(__memory_detail::destroy_at(std::forward<Args>(args)...))
     {
-        return __memory_detail::destroy_at (std::forward<Args> (args)...);
+        return __memory_detail::destroy_at(std::forward<Args>(args)...);
     }
     /* ------------------- end:   destroy_at ------------------- */
 
     template <typename T>
     constexpr T *
-    to_address (T *p) noexcept
+    to_address(T *p) noexcept
     {
-        static_assert (!std::is_function<T>::value, "");
+        static_assert(!std::is_function<T>::value, "");
         return p;
     }
 
     template <typename T, typename = typename std::enable_if<!std::is_pointer<T>::value>>
     constexpr auto
-    to_address (const T &p) noexcept
+    to_address(const T &p) noexcept
     {
-        return to_address (p.operator->());
+        return to_address(p.operator->());
     }
 } // namespace rtl
 

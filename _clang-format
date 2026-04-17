@@ -8,3 +8,7 @@ ColumnLimit: 100
 AllowShortFunctionsOnASingleLine: All
 BreakTemplateDeclarations: Yes
 AlignConsecutiveAssignments: Consecutive
+SpaceBeforeParens: ControlStatements
+SpacesInParens: Custom
+SpacesInParensOptions:
+  InConditionalStatements: true

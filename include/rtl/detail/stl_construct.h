@@ -16,9 +16,9 @@ namespace rtl
         template <typename T, typename... Args,
                   std::enable_if_t<std::is_array<T>::value && !is_unbounded_array_v<T>, int> = 0>
         auto
-        construct_at (T *location, Args &&...args) -> T *
+        construct_at(T *location, Args &&...args) -> T *
         {
-            static_assert (
+            static_assert(
                 sizeof...(Args) == 0,
                 "construct_at for array types must not use any arguments to initialize the array");
 
@@ -29,10 +29,10 @@ namespace rtl
         template <typename T, typename... Args,
                   std::enable_if_t<!std::is_array<T>::value && !is_unbounded_array_v<T>, int> = 0>
         constexpr auto
-        construct_at (T *location, Args &&...args) -> T *
+        construct_at(T *location, Args &&...args) -> T *
         {
             void *loc = location;
-            return ::new (loc) T (std::forward<Args> (args)...);
+            return ::new (loc) T(std::forward<Args>(args)...);
         }
 
         /* ------------------- end:   construct_at ------------------- */
@@ -40,18 +40,18 @@ namespace rtl
         /* ------------------- begin: destroy_at ------------------- */
         template <typename T, std::enable_if_t<!std::is_array<T>::value, int> = 0>
         auto
-        destroy_at (T *location) -> void
+        destroy_at(T *location) -> void
         {
-            location->~T ();
+            location->~T();
         }
 
         template <typename T, std::enable_if_t<std::is_array<T>::value, int> = 0>
         auto
-        destroy_at (T *location) -> void
+        destroy_at(T *location) -> void
         {
-            for (auto &t : *location)
+            for ( auto &t : *location )
                 {
-                    destroy_at (std::addressof (t));
+                    destroy_at(std::addressof(t));
                 }
         }
         /* ------------------- end:   destroy_at ------------------- */

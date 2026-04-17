@@ -166,16 +166,16 @@ namespace rtl
         class __is_nothrow_convertible_helper<From, To, false>
         {
             template <typename To1>
-            static void __test_aux (To1) noexcept;
+            static void __test_aux(To1) noexcept;
 
             template <typename From1, typename To1>
-            static bool_constant<noexcept (__test_aux<To1> (std::declval<From1> ()))> __test (int);
+            static bool_constant<noexcept(__test_aux<To1>(std::declval<From1>()))> __test(int);
 
             template <typename, typename>
-            static std::false_type __test (...);
+            static std::false_type __test(...);
 
           public:
-            using type = decltype (__test<From, To> (0));
+            using type = decltype(__test<From, To>(0));
         };
 
         template <typename To, typename From>
@@ -195,9 +195,8 @@ namespace rtl
 
         // any iterator whose -> operator returns a pointer
         template <typename T>
-        struct is_contiguous_iterator<
-            T, typename std::enable_if<
-                   std::is_pointer<decltype (std::declval<T> ().operator->)>::value>::type>
+        struct is_contiguous_iterator<T, typename std::enable_if<std::is_pointer<
+                                             decltype(std::declval<T>().operator->)>::value>::type>
             : std::true_type
         {
         };
