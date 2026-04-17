@@ -184,7 +184,10 @@ namespace rtl
         E m_error;
     };
 
-    // template <typename E> unexpected(E) -> unexpected<E>;
+#ifdef CXX_LIVE_MIN_VERSION_17
+    template <typename E>
+    unexpected(E) -> unexpected<E>;
+#endif // C++ 17
 
     namespace __expected_detail
     {
@@ -832,8 +835,6 @@ namespace rtl
         }
 
         // Equality Operators
-
-      private:
     };
 } // namespace rtl
 
