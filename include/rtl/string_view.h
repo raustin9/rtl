@@ -485,9 +485,9 @@ namespace rtl
             using limits               = std::numeric_limits<size_type>;
             const difference_type diff = n1 - n2;
             if ( diff > limits::max() )
-                return limits::max();
+                return static_cast<int>(limits::max());
             if ( diff < limits::min() )
-                return limits::min();
+                return static_cast<int>(limits::min());
             return static_cast<int>(diff);
         }
 
